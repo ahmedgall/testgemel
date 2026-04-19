@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bride | اختيار القسم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #050505;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .glass-card:hover {
+            border-color: #e11d48;
+            transform: translateY(-5px);
+            background: rgba(225, 29, 72, 0.05);
+        }
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-12">
+            <h1 class="text-3xl font-bold text-rose-600 mb-2">مرحباً بك في عالم The Bride</h1>
+            <p class="text-gray-400">يرجى اختيار القسم الخاص بنشاطك التجاري للاستمرار</p>
+        </header>
+
+        <div id="categories" class="category-grid">
+            </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
+            authDomain: "gggg-4cab7.firebaseapp.com",
+            projectId: "gggg-4cab7",
+            storageBucket: "gggg-4cab7.firebasestorage.app",
+            messagingSenderId: "51351904886",
+            appId: "1:51351904886:web:e71724e6bbd2837f333557"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // 1. التأكد من عملية تسجيل الدخول عبر الرابط
+        if (isSignInWithEmailLink(auth, window.location.href)) {
+            let email = window.localStorage.getItem('emailForSignIn');
+            if (!email) {
+                email = window.prompt('يرجى كتابة بريدك الإلكتروني للتأكيد:');
+            }
+            signInWithEmailLink(auth, email, window.location.href)
+                .then(() => {
+                    window.localStorage.removeItem('emailForSignIn');
+                    console.log("Logged in successfully!");
+                })
+                .catch((error) => {
+                    alert("حدث خطأ في الدخول: " + error.message);
+                });
+        }
+
+        // 2. قائمة الـ 15 قسم
+        const sections = [
+            { id: 1, name: "قاعات الأفراح", icon: "🏰" },
+            { id: 2, name: "مراكز التجميل", icon: "💄" },
+            { id: 3, name: "مصوري الفوتوغرافيا", icon: "📸" },
+            { id: 4, name: "أتيليهات الفساتين", icon: "👗" },
+            { id: 5, name: "بدل العرسان", icon: "🤵" },
+            { id: 6, name: "محلات الذهب", icon: "💍" },
+            { id: 7, name: "تجهيز بوفيه", icon: "🍽️" },
+            { id: 8, name: "فرق استعراضية", icon: "💃" },
+            { id: 9, name: "سيارات الزفاف", icon: "🚗" },
+            { id: 10, name: "تجهيز شقق", icon: "🏠" },
+            { id: 11, name: "محلات العطور", icon: "✨" },
+            { id: 12, name: "دعوات الزفاف", icon: "✉️" },
+            { id: 13, name: "سياحة وشهر عسل", icon: "✈️" },
+            { id: 14, name: "زهور وكوشات", icon: "💐" },
+            { id: 15, name: "دي جي وصوتيات", icon: "🎵" }
+        ];
+
+        const container = document.getElementById('categories');
+        sections.forEach(sec => {
+            const card = document.createElement('div');
+            card.className = "glass-card p-6 rounded-3xl text-center shadow-lg";
+            card.innerHTML = `
+                <div class="text-4xl mb-4">${sec.icon}</div>
+                <h3 class="text-lg font-bold">${sec.name}</h3>
+            `;
+            card.onclick = () => {
+                alert("تم اختيار قسم: " + sec.name);
+                // هنا ممكن نوجهه لصفحة رفع البيانات الخاصة بكل قسم
+            };
+            container.appendChild(card);
+        });
+    </script>
+</body>
+</html>
