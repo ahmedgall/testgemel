@@ -3,45 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Bride | اختيار القسم</title>
+    <title>The Bride | بوابة الشركاء</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: #050505;
-            color: #ffffff;
-            min-height: 100vh;
-        }
-        .glass-card {
-            background: rgba(20, 20, 20, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        .glass-card:hover {
-            border-color: #e11d48;
-            transform: translateY(-5px);
-            background: rgba(225, 29, 72, 0.05);
-        }
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1.5rem;
-        }
+        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; }
+        .glass-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; cursor: pointer; }
+        .glass-card:hover { border-color: #e11d48; transform: translateY(-5px); background: rgba(225, 29, 72, 0.05); }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem; }
+        #loading-screen { position: fixed; inset: 0; background: #050505; display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .loader { width: 48px; height: 48px; border: 5px solid #fff; border-bottom-color: #e11d48; border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="p-8">
 
-    <div class="max-w-5xl mx-auto">
+    <div id="loading-screen">
+        <div class="text-center">
+            <div class="loader mb-4"></div>
+            <p class="text-rose-600 font-bold">جاري التحقق من الرابط الآمن...</p>
+        </div>
+    </div>
+
+    <div id="main-content" class="max-w-5xl mx-auto hidden">
         <header class="text-center mb-12">
-            <h1 class="text-3xl font-bold text-rose-600 mb-2">مرحباً بك في عالم The Bride</h1>
-            <p class="text-gray-400">يرجى اختيار القسم الخاص بنشاطك التجاري للاستمرار</p>
+            <h1 class="text-3xl font-bold text-rose-600 mb-2">مرحباً بك في The Bride</h1>
+            <p class="text-gray-400">اختر القسم الخاص بك لإكمال إعداد حسابك</p>
         </header>
 
-        <div id="categories" class="category-grid">
-            </div>
+        <div id="categories" class="category-grid"></div>
     </div>
 
     <script type="module">
@@ -60,55 +50,65 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // 1. التأكد من عملية تسجيل الدخول عبر الرابط
-        if (isSignInWithEmailLink(auth, window.location.href)) {
-            let email = window.localStorage.getItem('emailForSignIn');
-            if (!email) {
-                email = window.prompt('يرجى كتابة بريدك الإلكتروني للتأكيد:');
-            }
-            signInWithEmailLink(auth, email, window.location.href)
-                .then(() => {
+        // الوظيفة الأساسية للتحقق من الرابط
+        async function completeSignIn() {
+            if (isSignInWithEmailLink(auth, window.location.href)) {
+                let email = window.localStorage.getItem('emailForSignIn');
+                
+                // لو المتصفح مسح الإيميل أو المستخدم فتح اللينك من جهاز تاني
+                if (!email) {
+                    email = window.prompt('من فضلك اكتب الإيميل الذي طلبت عليه رابط الدخول:');
+                }
+
+                try {
+                    await signInWithEmailLink(auth, email, window.location.href);
                     window.localStorage.removeItem('emailForSignIn');
-                    console.log("Logged in successfully!");
-                })
-                .catch((error) => {
-                    alert("حدث خطأ في الدخول: " + error.message);
-                });
+                    
+                    // إخفاء شاشة التحميل وإظهار المحتوى
+                    document.getElementById('loading-screen').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    renderCategories();
+                } catch (error) {
+                    console.error("Error signing in:", error);
+                    alert("الرابط غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.");
+                    window.location.href = "index.html"; // العودة للتسجيل
+                }
+            } else {
+                // لو دخل الصفحة مباشرة بدون لينك سحري
+                window.location.href = "index.html";
+            }
         }
 
-        // 2. قائمة الـ 15 قسم
-        const sections = [
-            { id: 1, name: "قاعات الأفراح", icon: "🏰" },
-            { id: 2, name: "مراكز التجميل", icon: "💄" },
-            { id: 3, name: "مصوري الفوتوغرافيا", icon: "📸" },
-            { id: 4, name: "أتيليهات الفساتين", icon: "👗" },
-            { id: 5, name: "بدل العرسان", icon: "🤵" },
-            { id: 6, name: "محلات الذهب", icon: "💍" },
-            { id: 7, name: "تجهيز بوفيه", icon: "🍽️" },
-            { id: 8, name: "فرق استعراضية", icon: "💃" },
-            { id: 9, name: "سيارات الزفاف", icon: "🚗" },
-            { id: 10, name: "تجهيز شقق", icon: "🏠" },
-            { id: 11, name: "محلات العطور", icon: "✨" },
-            { id: 12, name: "دعوات الزفاف", icon: "✉️" },
-            { id: 13, name: "سياحة وشهر عسل", icon: "✈️" },
-            { id: 14, name: "زهور وكوشات", icon: "💐" },
-            { id: 15, name: "دي جي وصوتيات", icon: "🎵" }
-        ];
+        function renderCategories() {
+            const sections = [
+                { id: 1, name: "قاعات الأفراح", icon: "🏰" },
+                { id: 2, name: "مراكز التجميل", icon: "💄" },
+                { id: 3, name: "مصوري الفوتوغرافيا", icon: "📸" },
+                { id: 4, name: "أتيليهات الفساتين", icon: "👗" },
+                { id: 5, name: "بدل العرسان", icon: "🤵" },
+                { id: 6, name: "محلات الذهب", icon: "💍" },
+                { id: 7, name: "تجهيز بوفيه", icon: "🍽️" },
+                { id: 8, name: "فرق استعراضية", icon: "💃" },
+                { id: 9, name: "سيارات الزفاف", icon: "🚗" },
+                { id: 10, name: "تجهيز شقق", icon: "🏠" },
+                { id: 11, name: "محلات العطور", icon: "✨" },
+                { id: 12, name: "دعوات الزفاف", icon: "✉️" },
+                { id: 13, name: "سياحة وشهر عسل", icon: "✈️" },
+                { id: 14, name: "زهور وكوشات", icon: "💐" },
+                { id: 15, name: "دي جي وصوتيات", icon: "🎵" }
+            ];
 
-        const container = document.getElementById('categories');
-        sections.forEach(sec => {
-            const card = document.createElement('div');
-            card.className = "glass-card p-6 rounded-3xl text-center shadow-lg";
-            card.innerHTML = `
-                <div class="text-4xl mb-4">${sec.icon}</div>
-                <h3 class="text-lg font-bold">${sec.name}</h3>
-            `;
-            card.onclick = () => {
-                alert("تم اختيار قسم: " + sec.name);
-                // هنا ممكن نوجهه لصفحة رفع البيانات الخاصة بكل قسم
-            };
-            container.appendChild(card);
-        });
+            const container = document.getElementById('categories');
+            sections.forEach(sec => {
+                const card = document.createElement('div');
+                card.className = "glass-card p-6 rounded-3xl text-center shadow-lg";
+                card.innerHTML = `<div class="text-4xl mb-4">${sec.icon}</div><h3 class="text-lg font-bold">${sec.name}</h3>`;
+                card.onclick = () => alert("تم اختيار: " + sec.name);
+                container.appendChild(card);
+            });
+        }
+
+        completeSignIn();
     </script>
 </body>
 </html>
