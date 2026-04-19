@@ -21,7 +21,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
         }
         .auth-card {
             background: rgba(15, 15, 15, 0.7);
@@ -49,26 +49,21 @@
         .btn-premium {
             background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%);
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
         }
         .btn-premium:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3);
             filter: brightness(1.1);
         }
-        .btn-premium:active { transform: translateY(0); }
-        
         .loader {
             width: 20px;
             height: 20px;
             border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
+            animation: spin 1s linear infinite;
             display: inline-block;
             margin-left: 10px;
-            vertical-align: middle;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -86,17 +81,11 @@
             <p class="text-gray-400 text-sm font-light uppercase tracking-widest italic">Partners Exclusive</p>
         </div>
 
-        <div class="bg-rose-500/5 border border-rose-500/10 p-4 rounded-2xl mb-8 text-center">
-            <p class="text-rose-200/70 text-[11px] leading-relaxed">
-                هذا النظام مخصص لشركاء الخدمة فقط. سيتم إرسال رابط دخول آمن لمرة واحدة إلى بريدك الإلكتروني لضمان أقصى درجات الخصوصية.
-            </p>
-        </div>
-
         <form id="partnerAuthForm" class="space-y-6">
             <div class="relative">
                 <input type="email" id="userEmail" required 
                     class="w-full input-dark p-4 rounded-2xl text-white placeholder-gray-600 text-center text-lg" 
-                    placeholder="name@company.com">
+                    placeholder="name@gmail.com">
             </div>
 
             <button type="submit" id="submitBtn" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg shadow-xl">
@@ -108,8 +97,8 @@
             <p id="msg" class="text-green-400 text-sm font-medium"></p>
         </div>
 
-        <div class="mt-12 text-center">
-            <p class="text-gray-600 text-[10px]">POWERED BY FIXAA ARAB TECHNOLOGY</p>
+        <div class="mt-12 text-center border-t border-white/5 pt-6">
+            <p class="text-gray-600 text-[10px] tracking-[3px]">POWERED BY FIXAA ARAB</p>
         </div>
     </div>
 
@@ -117,7 +106,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, sendSignInLinkToEmail } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-        // الـ Config الخاص بك (تم التأكد منه)
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
             authDomain: "gggg-4cab7.firebaseapp.com",
@@ -138,17 +126,12 @@
             const msgContainer = document.getElementById('msgContainer');
             const msg = document.getElementById('msg');
 
-            // --- تنبيه هام: قم بتغيير هذا الرابط للرابط النهائي على GitHub Pages ---
-            const finalRedirectUrl = window.location.href.includes('github.io') 
-                                     ? window.location.href.split('index.html')[0] + 'oo.html'
-                                     : window.location.origin + '/oo.html';
-
+            // تعديل الرابط ليكون ثابت ومطابق لـ Authorized Domains
             const actionCodeSettings = {
-                url: finalRedirectUrl,
+                url: 'https://ahmedgall.github.io/testgemel/oo.html',
                 handleCodeInApp: true,
             };
 
-            // UI Feedback
             btn.disabled = true;
             btn.innerHTML = '<span class="loader"></span> جاري الإرسال...';
 
@@ -157,11 +140,11 @@
                 window.localStorage.setItem('emailForSignIn', email);
                 
                 msgContainer.classList.remove('hidden');
-                msg.innerText = "تفقد بريدك الوارد (الجيميل) الآن. لقد أرسلنا لك رابط الدخول السري.";
+                msg.innerText = "تم إرسال رابط الدخول السري بنجاح. تفقد بريدك الوارد الآن.";
                 btn.innerHTML = '✅ تم الإرسال';
             } catch (error) {
-                console.error(error);
-                alert("خطأ تقني: " + error.message);
+                console.error("Error Detail:", error.code);
+                alert("خطأ: " + error.message);
                 btn.disabled = false;
                 btn.innerHTML = 'إرسال رابط الدخول';
             }
