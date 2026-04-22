@@ -12,7 +12,7 @@
         .auth-card { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; width: 100%; max-width: 450px; padding: 2.5rem; }
         .input-dark { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.4s; width: 100%; padding: 1rem; border-radius: 1rem; text-align: center; color: white; margin-bottom: 1rem; }
         .input-dark:focus { border-color: var(--primary); outline: none; background: rgba(255, 255, 255, 0.07); }
-        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); width: 100%; padding: 1rem; border-radius: 1rem; font-weight: bold; transition: 0.3s; }
+        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); width: 100%; padding: 1rem; border-radius: 1rem; font-weight: bold; transition: 0.3s; cursor: pointer; }
         .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3); }
         .hidden { display: none; }
     </style>
@@ -63,7 +63,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
@@ -79,7 +79,11 @@
 
         const API_URL = "https://api.ultramsg.com/instance171381/messages/chat";
         const TOKEN = "5fh5hfytsg5mml9n";
-        let tempOTP, currentAction, pendingData;
+        
+        // خزن الأكواد في الـ window عشان تضمن وصول الـ Functions ليها
+        window.currentOTP = "";
+        window.currentAction = "";
+        window.currentUserPhone = "";
 
         window.showForm = (type) => {
             document.querySelectorAll('.auth-card > div:not(.text-center):not(.mt-8)').forEach(d => d.classList.add('hidden'));
@@ -88,44 +92,74 @@
         };
 
         window.handleAuth = async (action) => {
-            currentAction = action;
-            const phone = document.getElementById(action + 'Phone').value;
+            window.currentAction = action;
+            const phoneField = document.getElementById(action + 'Phone');
+            const phone = phoneField.value.trim();
+
             if (!phone) return alert("دخل الرقم يا بطل!");
 
-            // توليد OTP
-            tempOTP = Math.floor(100000 + Math.random() * 900000);
+            // توليد OTP كـ String لضمان دقة المقارنة
+            window.currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            window.currentUserPhone = phone;
             
-            // إرسال واتساب
-            const params = new URLSearchParams({ "token": TOKEN, "to": phone, "body": `كود التحقق في The Bride هو: *${tempOTP}*` });
+            console.log("OTP for testing: " + window.currentOTP);
+
+            const params = new URLSearchParams({ 
+                "token": TOKEN, 
+                "to": phone, 
+                "body": `*The Bride*\n\nكود التحقق الخاص بك هو: *${window.currentOTP}*` 
+            });
             
             try {
-                await fetch(API_URL, { method: 'POST', body: params });
-                document.getElementById(action + 'Form').classList.add('hidden');
-                document.getElementById('otpStep').classList.remove('hidden');
-            } catch (e) { alert("مشكلة في إرسال الواتساب"); }
+                const response = await fetch(API_URL, { method: 'POST', body: params });
+                const result = await response.json();
+                
+                if (result.sent === "true" || result.success) {
+                    document.getElementById(action + 'Form').classList.add('hidden');
+                    document.getElementById('otpStep').classList.remove('hidden');
+                } else {
+                    alert("فشل إرسال الكود. تأكد من الرقم (مثال: 2010...)");
+                }
+            } catch (e) { 
+                alert("مشكلة في سيرفر الواتساب"); 
+            }
         };
 
         document.getElementById('verifyBtn').onclick = async () => {
-            const code = document.getElementById('otpInput').value;
-            if (code != tempOTP) return alert("الكود غلط!");
+            const inputCode = document.getElementById('otpInput').value.trim();
 
-            // تنفيذ الأكشن بعد التأكد من الواتساب
-            if (currentAction === 'register') {
-                const phone = document.getElementById('regPhone').value;
-                const pass = document.getElementById('regPass').value;
-                await setDoc(doc(db, "partners", phone), { password: pass });
-                alert("تم إنشاء الحساب!");
-            } 
-            
-            if (currentAction === 'login') {
-                const phone = document.getElementById('loginPhone').value;
-                const pass = document.getElementById('loginPass').value;
-                const userDoc = await getDoc(doc(db, "partners", phone));
-                if (!userDoc.exists() || userDoc.data().password !== pass) return alert("بيانات غلط!");
+            if (inputCode !== window.currentOTP) {
+                return alert("الكود غلط! راجع الواتساب.");
             }
 
-            sessionStorage.setItem('isAuth', 'true');
-            window.location.href = "oo.html";
+            // لو الكود صح، نبدأ تنفيذ العمليات
+            try {
+                if (window.currentAction === 'register') {
+                    const pass = document.getElementById('regPass').value;
+                    const confirm = document.getElementById('regPassConfirm').value;
+                    if (pass !== confirm) return alert("الباسورد مش متطابق!");
+                    
+                    await setDoc(doc(db, "partners", window.currentUserPhone), { password: pass });
+                } 
+                
+                if (window.currentAction === 'login') {
+                    const pass = document.getElementById('loginPass').value;
+                    const userDoc = await getDoc(doc(db, "partners", window.currentUserPhone));
+                    
+                    if (!userDoc.exists() || userDoc.data().password !== pass) {
+                        return alert("رقم الموبايل أو الباسورد غلط!");
+                    }
+                }
+
+                // حفظ الداتا في السشن عشان الصفحة اللي جاية
+                sessionStorage.setItem('isAuth', 'true');
+                sessionStorage.setItem('userPhone', window.currentUserPhone);
+                
+                window.location.href = "oo.html";
+            } catch (err) {
+                alert("حدث خطأ في قاعدة البيانات");
+                console.error(err);
+            }
         };
     </script>
 </body>
