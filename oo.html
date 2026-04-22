@@ -78,7 +78,6 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
@@ -91,27 +90,22 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app);
 
-        // 1. التشغيل الأول: التحقق من وجود بيانات سابقة
         async function checkUserStatus() {
             const userAuth = sessionStorage.getItem('isAuth');
-            const userPhone = sessionStorage.getItem('userPhone'); // لازم نكون حفظناه في صفحة الـ Login
+            const userPhone = sessionStorage.getItem('userPhone');
 
-            if (!userAuth) {
+            if (!userAuth || !userPhone) {
                 window.location.href = "index.html";
                 return;
             }
 
-            // البحث في Firestore هل الرقم ده رفع بيانات قبل كدة؟
             const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
             const querySnapshot = await getDocs(q);
 
             if (!querySnapshot.empty) {
-                // لو ليه بيانات فعلاً، ابعته على الأدمن فوراً
                 window.location.href = "adm.html";
             } else {
-                // لو جديد، خليه يكمل ويشوف الأقسام
                 document.getElementById('loader-overlay').style.display = 'none';
                 document.getElementById('step-categories').classList.remove('hidden');
             }
@@ -119,7 +113,6 @@
 
         checkUserStatus();
 
-        // باقي كود الأقسام والرفع (نفس اللي فات بس ضفنا رقم التليفون للبيانات)
         const sections = [
             { id: 'halls', name: 'قاعات أفراح', svg: '<path d="M3 21h18M3 10l9-7 9 7v11H3V10z M9 21v-4a3 3 0 016 0v4"/>' },
             { id: 'makeup', name: 'ميك أب ارتست', svg: '<path d="M12 22a9 9 0 100-18 9 9 0 000 18z M8 11h.01M16 11h.01M12 16c1.5 0 3-1 3-1s-1.5-1-3-1-3 1-3 1 1.5 1 3 1z"/>' },
@@ -159,17 +152,13 @@
 
         document.getElementById('uploadDataForm').onsubmit = async (e) => {
             e.preventDefault();
-            const files = document.getElementById('pImages').files;
             document.getElementById('loader-overlay').style.display = 'flex';
-            document.getElementById('loader-text').innerText = "جاري رفع الصور والبيانات...";
+            document.getElementById('loader-text').innerText = "جاري حفظ البيانات والدخول للوحة التحكم...";
 
             try {
-                const urls = [];
-                for(let file of files) {
-                    const sRef = ref(storage, `bride_data/${selectedId}/${Date.now()}-${file.name}`);
-                    await uploadBytes(sRef, file);
-                    urls.push(await getDownloadURL(sRef));
-                }
+                // تخطي الـ Storage مؤقتاً لتجنب الـ Blaze Plan
+                // هنخزن مصفوفة فاضية أو صور تجريبية
+                const dummyUrls = ["https://via.placeholder.com/400"];
 
                 await addDoc(collection(db, "bride_services"), {
                     phone: sessionStorage.getItem('userPhone'),
@@ -177,13 +166,15 @@
                     name: document.getElementById('pName').value,
                     address: document.getElementById('pAddress').value,
                     desc: document.getElementById('pDesc').value,
-                    images: urls,
+                    images: dummyUrls, 
                     time: serverTimestamp()
                 });
 
+                // التحويل لـ adm.html هيحصل فوراً لأن Firestore مجاني
                 window.location.href = "adm.html";
             } catch (err) {
-                alert("حدث خطأ");
+                console.error("Error:", err);
+                alert("مشكلة في الحفظ: " + err.message);
                 document.getElementById('loader-overlay').style.display = 'none';
             }
         };
