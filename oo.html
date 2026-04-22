@@ -7,12 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; }
+        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; margin: 0; }
         .glass-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; cursor: pointer; }
         .glass-card:hover { border-color: #e11d48; transform: translateY(-5px); background: rgba(225, 29, 72, 0.05); }
         .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem; }
         #loading-screen { position: fixed; inset: 0; background: #050505; display: flex; align-items: center; justify-content: center; z-index: 50; }
-        .loader { width: 48px; height: 48px; border: 5px solid #fff; border-bottom-color: #e11d48; border-radius: 50%; animation: rotation 1s linear infinite; }
+        .loader { width: 48px; height: 48px; border: 5px solid rgba(255,255,255,0.1); border-bottom-color: #e11d48; border-radius: 50%; animation: rotation 1s linear infinite; }
         @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -20,61 +20,76 @@
 
     <div id="loading-screen">
         <div class="text-center">
-            <div class="loader mb-4"></div>
-            <p class="text-rose-600 font-bold">جاري التحقق من الرابط الآمن...</p>
+            <div class="loader mb-4 mx-auto"></div>
+            <p class="text-rose-600 font-bold animate-pulse">جاري التحقق من الرابط الآمن...</p>
         </div>
     </div>
 
     <div id="main-content" class="max-w-5xl mx-auto hidden">
         <header class="text-center mb-12">
-            <h1 class="text-3xl font-bold text-rose-600 mb-2">مرحباً بك في The Bride</h1>
-            <p class="text-gray-400">اختر القسم الخاص بك لإكمال إعداد حسابك</p>
+            <div class="mb-4 inline-block p-3 rounded-2xl bg-rose-600/10 text-rose-600 font-bold text-xs tracking-widest uppercase">
+                Fixaa Arab Exclusive
+            </div>
+            <h1 class="text-4xl font-bold text-white mb-2">مرحباً بك في <span class="text-rose-600">The Bride</span></h1>
+            <p class="text-gray-400">اختر القسم الخاص بك لإكمال إعداد حسابك كشريك</p>
         </header>
 
         <div id="categories" class="category-grid"></div>
+        
+        <footer class="mt-20 text-center border-t border-white/5 pt-8">
+            <p class="text-gray-600 text-[10px] tracking-[4px]">POWERED BY FIXAA ARAB</p>
+        </footer>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
+        // إعدادات Firebase (نفس اللي في الصفحة الأولى)
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
             authDomain: "gggg-4cab7.firebaseapp.com",
             projectId: "gggg-4cab7",
             storageBucket: "gggg-4cab7.firebasestorage.app",
             messagingSenderId: "51351904886",
-            appId: "1:51351904886:web:e71724e6bbd2837f333557"
+            appId: "1:51351904886:web:e71724e6bbd2837f333557",
+            measurementId: "G-VKVNTDXW0P"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
 
-        // الوظيفة الأساسية للتحقق من الرابط
         async function completeSignIn() {
+            // 1. هل الرابط الحالي هو رابط دخول Firebase؟
             if (isSignInWithEmailLink(auth, window.location.href)) {
+                
+                // 2. محاولة جلب الإيميل من التخزين المحلي
                 let email = window.localStorage.getItem('emailForSignIn');
                 
-                // لو المتصفح مسح الإيميل أو المستخدم فتح اللينك من جهاز تاني
+                // 3. لو مش موجود (فتح اللينك من جهاز تاني مثلاً) نطلبه منه
                 if (!email) {
-                    email = window.prompt('من فضلك اكتب الإيميل الذي طلبت عليه رابط الدخول:');
+                    email = window.prompt('من فضلك اكتب الإيميل الذي طلبت عليه رابط الدخول للتأكيد:');
                 }
 
                 try {
+                    // 4. إتمام عملية الدخول فعلياً
                     await signInWithEmailLink(auth, email, window.location.href);
+                    
+                    // مسح الإيميل من التخزين بعد النجاح
                     window.localStorage.removeItem('emailForSignIn');
                     
-                    // إخفاء شاشة التحميل وإظهار المحتوى
+                    // 5. إظهار المحتوى
                     document.getElementById('loading-screen').classList.add('hidden');
                     document.getElementById('main-content').classList.remove('hidden');
                     renderCategories();
+
                 } catch (error) {
-                    console.error("Error signing in:", error);
+                    console.error("Firebase Auth Error:", error.code);
                     alert("الرابط غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.");
-                    window.location.href = "index.html"; // العودة للتسجيل
+                    window.location.href = "index.html"; // ارجع لصفحة التسجيل
                 }
             } else {
-                // لو دخل الصفحة مباشرة بدون لينك سحري
+                // لو حد حاول يفتح oo.html مباشرة من غير لينك
                 window.location.href = "index.html";
             }
         }
@@ -99,16 +114,22 @@
             ];
 
             const container = document.getElementById('categories');
+            container.innerHTML = ""; // تنظيف الحاوية
             sections.forEach(sec => {
                 const card = document.createElement('div');
                 card.className = "glass-card p-6 rounded-3xl text-center shadow-lg";
                 card.innerHTML = `<div class="text-4xl mb-4">${sec.icon}</div><h3 class="text-lg font-bold">${sec.name}</h3>`;
-                card.onclick = () => alert("تم اختيار: " + sec.name);
+                card.onclick = () => {
+                    // هنا ممكن توجهه لصفحة رفع الداتا الخاصة بكل قسم
+                    console.log("Selected Section ID:", sec.id);
+                    alert("تم اختيار قسم: " + sec.name + "\nسيتم تفعيل لوحة التحكم الخاصة بك قريباً.");
+                };
                 container.appendChild(card);
             });
         }
 
-        completeSignIn();
+        // تشغيل العملية فور تحميل الصفحة
+        window.addEventListener('DOMContentLoaded', completeSignIn);
     </script>
 </body>
 </html>
