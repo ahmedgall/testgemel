@@ -9,131 +9,91 @@
     <style>
         :root { --primary: #e11d48; --bg-dark: #050505; }
         body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-dark);
-            background-image: radial-gradient(circle at top right, rgba(225, 29, 72, 0.05), transparent),
-                              radial-gradient(circle at bottom left, rgba(225, 29, 72, 0.05), transparent);
-            color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; overflow-x: hidden;
+            font-family: 'Cairo', sans-serif; background-color: var(--bg-dark); color: #ffffff; 
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background-image: radial-gradient(circle at top right, rgba(225, 29, 72, 0.05), transparent);
         }
-        .auth-card {
-            background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); animation: fadeIn 0.8s ease-out;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .input-dark {
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .input-dark:focus { border-color: var(--primary); background: rgba(255, 255, 255, 0.07); outline: none; box-shadow: 0 0 15px rgba(225, 29, 72, 0.1); }
-        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); transition: all 0.3s ease; }
-        .btn-premium:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3); }
-        .loader { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-left: 8px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .auth-card { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; }
+        .input-dark { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.4s; }
+        .input-dark:focus { border-color: var(--primary); outline: none; }
+        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); }
+        .hidden { display: none; }
     </style>
 </head>
 <body class="p-6">
 
-    <div class="auth-card w-full max-w-md p-10 relative">
+    <div class="auth-card w-full max-w-md p-10">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-white mb-2">The Bride</h1>
-            <p id="formTitle" class="text-gray-400 text-sm italic uppercase tracking-widest">تسجيل الدخول للشركاء</p>
+            <p id="statusText" class="text-gray-400 text-sm italic uppercase">تسجيل دخول الشركاء</p>
         </div>
 
-        <form id="loginForm" class="space-y-4">
-            <input type="email" id="loginEmail" required class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="البريد الإلكتروني">
-            <input type="password" id="loginPass" required class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="كلمة السر">
+        <div id="step1" class="space-y-4">
+            <input type="tel" id="userPhone" class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="رقم الموبايل (2010...)">
+            <input type="password" id="userPass" class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="كلمة السر">
             
-            <button type="submit" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg shadow-xl">دخول</button>
+            <button onclick="sendOTP()" id="mainBtn" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg">إرسال كود التحقق</button>
             
-            <div class="flex justify-between text-xs text-gray-500 px-2">
-                <button type="button" onclick="toggleForm('forgot')" class="hover:text-rose-500">نسيت كلمة السر؟</button>
-                <button type="button" onclick="toggleForm('register')" class="hover:text-rose-500">إنشاء حساب جديد</button>
-            </div>
-        </form>
+            <p class="text-[10px] text-center text-gray-600 mt-4">سيتم إرسال الكود عبر الواتساب الخاص بك</p>
+        </div>
 
-        <form id="registerForm" class="hidden space-y-4">
-            <input type="email" id="regEmail" required class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="البريد الإلكتروني">
-            <input type="password" id="regPass" required class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="كلمة السر">
-            <input type="password" id="regPassConfirm" required class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="تأكيد كلمة السر">
-            
-            <button type="submit" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg shadow-xl text-white">تسجيل الحساب</button>
-            <button type="button" onclick="toggleForm('login')" class="w-full text-xs text-gray-500 mt-2">لديك حساب بالفعل؟ دخول</button>
-        </form>
-
-        <form id="forgotForm" class="hidden space-y-4">
-            <p class="text-xs text-gray-400 text-center mb-4">أدخل إيميلك وسنرسل لك رابط استعادة كلمة السر</p>
-            <input type="email" id="forgotEmail" required class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="بريدك الإلكتروني">
-            <button type="submit" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg shadow-xl">إرسال رابط الاستعادة</button>
-            <button type="button" onclick="toggleForm('login')" class="w-full text-xs text-gray-500 mt-2">رجوع للدخول</button>
-        </form>
+        <div id="step2" class="hidden space-y-4">
+            <p class="text-center text-rose-500 text-sm">أدخل الكود المكون من 6 أرقام</p>
+            <input type="text" id="otpInput" class="w-full input-dark p-4 rounded-2xl text-white text-center text-2xl tracking-[10px]" placeholder="000000">
+            <button onclick="verifyAndLogin()" class="w-full bg-green-600 py-4 rounded-2xl font-bold text-lg">تأكيد ودخول</button>
+            <button onclick="location.reload()" class="w-full text-gray-500 text-xs">رجوع؟</button>
+        </div>
 
         <div class="mt-8 text-center border-t border-white/5 pt-6 text-[10px] text-gray-600 tracking-[4px]">
             POWERED BY FIXAA ARAB
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    <script>
+        const INSTANCE_ID = 'instance171381';
+        const TOKEN = '5fh5hfytsg5mml9n';
+        let generatedOTP;
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
-            authDomain: "gggg-4cab7.firebaseapp.com",
-            projectId: "gggg-4cab7",
-            storageBucket: "gggg-4cab7.firebasestorage.app",
-            messagingSenderId: "51351904886",
-            appId: "1:51351904886:web:e71724e6bbd2837f333557"
-        };
+        async function sendOTP() {
+            const phone = document.getElementById('userPhone').value;
+            const pass = document.getElementById('userPass').value;
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+            if (!phone || !pass) return alert("اكتب الرقم والباسورد يا بطل!");
 
-        // تبديل بين الفورمز
-        window.toggleForm = (type) => {
-            const forms = ['loginForm', 'registerForm', 'forgotForm'];
-            forms.forEach(f => document.getElementById(f).classList.add('hidden'));
+            generatedOTP = Math.floor(100000 + Math.random() * 900000);
             
-            if(type === 'login') {
-                document.getElementById('loginForm').classList.remove('hidden');
-                document.getElementById('formTitle').innerText = 'تسجيل الدخول للشركاء';
-            } else if(type === 'register') {
-                document.getElementById('registerForm').classList.remove('hidden');
-                document.getElementById('formTitle').innerText = 'انضم لعائلة الشركاء';
+            const btn = document.getElementById('mainBtn');
+            btn.disabled = true;
+            btn.innerText = 'جاري الإرسال...';
+
+            // إرسال للواتساب
+            const url = `https://api.ultramsg.com/${INSTANCE_ID}/messages/chat`;
+            const params = new URLSearchParams({
+                "token": TOKEN,
+                "to": phone,
+                "body": `*The Bride Security*\n\nكود دخول لوحة التحكم الخاص بك هو: *${generatedOTP}*\n\nكلمة السر المدخلة: ******`
+            });
+
+            try {
+                const response = await fetch(url, { method: 'POST', body: params });
+                const res = await response.json();
+                if (res.sent === "true") {
+                    document.getElementById('step1').classList.add('hidden');
+                    document.getElementById('step2').classList.remove('hidden');
+                    document.getElementById('statusText').innerText = "تم إرسال الكود";
+                }
+            } catch (e) { alert("حدث خطأ في الإرسال"); }
+        }
+
+        function verifyAndLogin() {
+            const input = document.getElementById('otpInput').value;
+            if (input == generatedOTP) {
+                // حفظ الجلسة في المتصفح
+                sessionStorage.setItem('isPartner', 'true');
+                window.location.href = "oo.html";
             } else {
-                document.getElementById('forgotForm').classList.remove('hidden');
-                document.getElementById('formTitle').innerText = 'استعادة الحساب';
+                alert("الكود غلط، راجع الواتساب!");
             }
-        }
-
-        // 1. تسجيل الدخول
-        document.getElementById('loginForm').onsubmit = async (e) => {
-            e.preventDefault();
-            try {
-                await signInWithEmailAndPassword(auth, loginEmail.value, loginPass.value);
-                window.location.href = "oo.html";
-            } catch (error) { alert("خطأ في البيانات أو الحساب غير موجود"); }
-        }
-
-        // 2. إنشاء حساب جديد
-        document.getElementById('registerForm').onsubmit = async (e) => {
-            e.preventDefault();
-            if(regPass.value !== regPassConfirm.value) return alert("كلمات السر غير متطابقة!");
-            try {
-                await createUserWithEmailAndPassword(auth, regEmail.value, regPass.value);
-                alert("تم إنشاء الحساب بنجاح!");
-                window.location.href = "oo.html";
-            } catch (error) { alert("فشل التسجيل: " + error.message); }
-        }
-
-        // 3. استعادة الباسورد
-        document.getElementById('forgotForm').onsubmit = async (e) => {
-            e.preventDefault();
-            try {
-                await sendPasswordResetEmail(auth, forgotEmail.value);
-                alert("تم إرسال رابط الاستعادة لإيميلك.. تفقد البريد الوارد");
-                toggleForm('login');
-            } catch (error) { alert("تأكد من صحة الإيميل"); }
         }
     </script>
 </body>
