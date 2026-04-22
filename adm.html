@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bride | لوحة تحكم الشريك</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; }
+        .glass-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2rem; }
+        .tab-btn.active { border-bottom: 3px solid #e11d48; color: #e11d48; }
+        .time-slot { transition: 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
+        .time-slot.closed { background: #450a0a; border-color: #e11d48; color: #991b1b; text-decoration: line-through; }
+        .time-slot.open { background: #064e3b; border-color: #10b981; color: #34d399; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto">
+        <div class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-bold">لوحة تحكم <span class="text-rose-600" id="businessName">الخدمة</span></h1>
+                <p class="text-gray-500 text-sm">مرحباً بك في Fixaa Arab Management</p>
+            </div>
+            <button onclick="logout()" class="bg-zinc-800 p-3 rounded-xl hover:bg-rose-900 transition">خروج</button>
+        </div>
+
+        <div class="flex gap-8 mb-8 border-b border-white/10 pb-2 overflow-x-auto">
+            <button onclick="switchTab('bookings')" id="tab-bookings" class="tab-btn active pb-2 font-bold whitespace-nowrap">الحجوزات الحالية</button>
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn pb-2 font-bold whitespace-nowrap">إدارة المواعيد</button>
+            <button onclick="switchTab('reviews')" id="tab-reviews" class="tab-btn pb-2 font-bold whitespace-nowrap">التقييمات والآراء</button>
+        </div>
+
+        <div id="section-bookings" class="space-y-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" id="bookingsList">
+                <div class="glass-card p-6 flex flex-col md:flex-row gap-4 items-center">
+                    <div class="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center">
+                        <svg class="w-10 h-10 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div class="flex-1 text-center md:text-right">
+                        <h3 class="font-bold text-xl">محمد أحمد (حجز فستان)</h3>
+                        <p class="text-gray-400 text-xs">طريقة الدفع: <span class="text-green-500">فودافون كاش</span></p>
+                        <p class="text-gray-400 text-xs">الموعد: 25 مايو - 04:00 عصراً</p>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <button class="bg-rose-600 px-4 py-2 rounded-lg text-sm font-bold">عرض الوصل</button>
+                        <button class="bg-green-600 px-4 py-2 rounded-lg text-sm font-bold">تأكيد</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="section-schedule" class="hidden">
+            <div class="glass-card p-8">
+                <h2 class="text-xl font-bold mb-6">إدارة المواعيد اليومية (متاح/مغلق)</h2>
+                <div class="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-3" id="hoursGrid">
+                    </div>
+                <p class="mt-6 text-gray-500 text-xs">* اضغط على الساعة لغلقها أو فتحها أمام المستخدمين في التطبيق.</p>
+            </div>
+        </div>
+
+        <div id="section-reviews" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass-card p-6 text-center">
+                    <p class="text-gray-400">إجمالي التقييم</p>
+                    <h2 class="text-5xl font-black text-rose-600 mt-2">4.8</h2>
+                    <p class="text-yellow-500 mt-2">★★★★★</p>
+                </div>
+                <div class="md:col-span-2 space-y-4" id="reviewsList">
+                    <div class="glass-card p-4">
+                        <div class="flex justify-between mb-2">
+                            <span class="font-bold">سارة علي</span>
+                            <span class="text-yellow-500 text-xs">★★★★★</span>
+                        </div>
+                        <p class="text-gray-400 text-sm">شغل فخم جداً والتعامل راقي، شكراً ليكم!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
+            authDomain: "gggg-4cab7.firebaseapp.com",
+            projectId: "gggg-4cab7",
+            storageBucket: "gggg-4cab7.firebasestorage.app",
+            messagingSenderId: "51351904886",
+            appId: "1:51351904886:web:e71724e6bbd2837f333557"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // التحقق من الهوية
+        const userPhone = sessionStorage.getItem('userPhone');
+        if(!userPhone) window.location.href = "index.html";
+
+        // 1. إدارة التبويبات
+        window.switchTab = (tab) => {
+            document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('section-' + tab).classList.remove('hidden');
+            document.getElementById('tab-' + tab).classList.add('active');
+        };
+
+        // 2. توليد ساعات اليوم (Schedule)
+        const hoursGrid = document.getElementById('hoursGrid');
+        for(let i=0; i<24; i++) {
+            const hour = i < 10 ? `0${i}:00` : `${i}:00`;
+            const div = document.createElement('div');
+            div.className = "time-slot open p-3 rounded-xl text-center font-bold text-sm";
+            div.innerText = hour;
+            div.onclick = function() {
+                this.classList.toggle('open');
+                this.classList.toggle('closed');
+                // هنا ممكن تضيف كود يرفع الحالة للفايرستور
+            };
+            hoursGrid.appendChild(div);
+        }
+
+        // 3. جلب بيانات النشاط
+        async function loadBusinessData() {
+            const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
+            const snap = await getDocs(q);
+            if(!snap.empty) {
+                document.getElementById('businessName').innerText = snap.docs[0].data().name;
+            }
+        }
+        loadBusinessData();
+
+        window.logout = () => {
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        };
+
+    </script>
+</body>
+</html>
