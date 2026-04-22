@@ -23,18 +23,20 @@
         }
         .input-dark:focus { border-color: #e11d48; background: rgba(255, 255, 255, 0.05); outline: none; }
         #loader-overlay { 
-            display: flex; position: fixed; inset: 0; background: rgba(0,0,0,1); 
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,1); 
             z-index: 100; flex-direction: column; align-items: center; justify-content: center; 
         }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="p-4 md:p-10">
 
     <div id="loader-overlay">
         <div class="w-16 h-16 border-4 border-t-rose-600 border-white/10 rounded-full spin mb-4"></div>
-        <p id="loader-text" class="text-rose-600 font-bold text-xl animate-pulse">جاري التحقق من الحساب...</p>
+        <p id="loader-text" class="text-rose-600 font-bold text-xl animate-pulse text-center px-4"></p>
     </div>
 
     <div class="max-w-6xl mx-auto">
@@ -50,26 +52,26 @@
 
         <div id="step-form" class="hidden max-w-2xl mx-auto animate-fadeIn">
             <button onclick="goBack()" class="flex items-center text-gray-500 hover:text-white mb-8 transition">
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 12H5m7 7l-7-7 7-7"/></svg>
+                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 12H5m7 7l-7-7 7-7"/></svg>
                 رجوع للأقسام
             </button>
             
             <div class="bg-zinc-900/40 p-8 rounded-[3rem] border border-white/5 shadow-2xl">
-                <h3 id="form-title" class="text-3xl font-bold mb-8 text-center"></h3>
+                <h3 id="form-title" class="text-3xl font-bold mb-8 text-center text-white"></h3>
                 <form id="uploadDataForm" class="space-y-5">
                     <input type="text" id="pName" placeholder="اسم القاعة / المحل / النشاط" class="input-dark text-center text-lg" required>
                     <input type="text" id="pAddress" placeholder="العنوان بالتفصيل (محافظة - منطقة)" class="input-dark text-center" required>
-                    <textarea id="pDesc" placeholder="وصف للخدمات المميزة" class="input-dark h-32 text-center"></textarea>
+                    <textarea id="pDesc" placeholder="وصف للخدمات المميزة التي تقدمها" class="input-dark h-32 text-center"></textarea>
                     
                     <div class="group relative border-2 border-dashed border-white/10 p-10 rounded-[2rem] text-center hover:border-rose-600 transition-all">
                         <input type="file" id="pImages" multiple accept="image/*" class="hidden" onchange="showPreview(this)">
                         <div onclick="document.getElementById('pImages').click()" class="cursor-pointer">
-                            <svg class="w-12 h-12 text-gray-600 mx-auto mb-4 group-hover:text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <p class="text-gray-500 group-hover:text-white">ارفع صور المكان</p>
+                            <svg class="w-12 h-12 text-gray-600 mx-auto mb-4 group-hover:text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <p class="text-gray-500 group-hover:text-white">ارفع صور النشاط (يمكن اختيار أكثر من صورة)</p>
                             <p id="imgCount" class="text-rose-600 font-bold mt-2"></p>
                         </div>
                     </div>
-                    <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-5 rounded-2xl font-bold text-xl transition-all">حفظ البيانات</button>
+                    <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-5 rounded-2xl font-bold text-xl transition-all shadow-lg shadow-rose-600/20">حفظ البيانات والدخول</button>
                 </form>
             </div>
         </div>
@@ -91,21 +93,28 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // ImgBB API Key - مجاني وسهل
+        const IMGBB_API_KEY = '59e66336e76f59c8697669678e078972';
+
         async function checkUserStatus() {
-            const userAuth = sessionStorage.getItem('isAuth');
             const userPhone = sessionStorage.getItem('userPhone');
+            if (!userPhone) { window.location.href = "index.html"; return; }
 
-            if (!userAuth || !userPhone) {
-                window.location.href = "index.html";
-                return;
-            }
+            document.getElementById('loader-overlay').style.display = 'flex';
+            document.getElementById('loader-text').innerText = "جاري فحص الحساب...";
 
-            const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
-            const querySnapshot = await getDocs(q);
+            try {
+                const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
+                const querySnapshot = await getDocs(q);
 
-            if (!querySnapshot.empty) {
-                window.location.href = "adm.html";
-            } else {
+                if (!querySnapshot.empty) {
+                    window.location.href = "adm.html";
+                } else {
+                    document.getElementById('loader-overlay').style.display = 'none';
+                    document.getElementById('step-categories').classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error(err);
                 document.getElementById('loader-overlay').style.display = 'none';
                 document.getElementById('step-categories').classList.remove('hidden');
             }
@@ -131,12 +140,13 @@
         sections.forEach(s => {
             const card = document.createElement('div');
             card.className = "category-card p-8 rounded-[2.5rem] text-center";
-            card.innerHTML = `<svg class="w-10 h-10 text-rose-600 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">${s.svg}</svg><p class="font-bold text-sm">${s.name}</p>`;
+            card.innerHTML = `<svg class="w-10 h-10 text-rose-600 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">${s.svg}</svg><p class="font-bold text-sm text-white">${s.name}</p>`;
             card.onclick = () => {
                 selectedId = s.id;
                 document.getElementById('form-title').innerText = s.name;
                 document.getElementById('step-categories').classList.add('hidden');
                 document.getElementById('step-form').classList.remove('hidden');
+                window.scrollTo(0,0);
             };
             grid.appendChild(card);
         });
@@ -147,18 +157,47 @@
         };
 
         window.showPreview = (input) => {
-            document.getElementById('imgCount').innerText = `تم اختيار ${input.files.length} صور`;
+            if (input.files && input.files.length > 0) {
+                document.getElementById('imgCount').innerText = `تم اختيار ${input.files.length} صور جاهزة للرفع`;
+            }
         };
+
+        // دالة الرفع المستقلة لـ ImgBB
+        async function uploadImageToImgBB(file) {
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('فشل رفع الصورة');
+            const result = await response.json();
+            return result.data.url; // يعيد رابط الصورة المباشر
+        }
 
         document.getElementById('uploadDataForm').onsubmit = async (e) => {
             e.preventDefault();
+            const files = document.getElementById('pImages').files;
+            
+            if (files.length === 0) {
+                alert("يرجى اختيار صور النشاط أولاً");
+                return;
+            }
+
             document.getElementById('loader-overlay').style.display = 'flex';
-            document.getElementById('loader-text').innerText = "جاري حفظ البيانات والدخول للوحة التحكم...";
+            document.getElementById('loader-text').innerText = "بدء رفع الصور الحقيقية...";
 
             try {
-                // تخطي الـ Storage مؤقتاً لتجنب الـ Blaze Plan
-                // هنخزن مصفوفة فاضية أو صور تجريبية
-                const dummyUrls = ["https://via.placeholder.com/400"];
+                const uploadedUrls = [];
+                for (let i = 0; i < files.length; i++) {
+                    document.getElementById('loader-text').innerText = `جاري رفع الصورة (${i + 1} من ${files.length})...`;
+                    const url = await uploadImageToImgBB(files[i]);
+                    uploadedUrls.push(url);
+                }
+
+                document.getElementById('loader-text').innerText = "جاري حفظ البيانات النهائية...";
 
                 await addDoc(collection(db, "bride_services"), {
                     phone: sessionStorage.getItem('userPhone'),
@@ -166,15 +205,19 @@
                     name: document.getElementById('pName').value,
                     address: document.getElementById('pAddress').value,
                     desc: document.getElementById('pDesc').value,
-                    images: dummyUrls, 
-                    time: serverTimestamp()
+                    images: uploadedUrls, // مصفوفة الروابط الحقيقية
+                    time: serverTimestamp(),
+                    isVerified: false
                 });
 
-                // التحويل لـ adm.html هيحصل فوراً لأن Firestore مجاني
-                window.location.href = "adm.html";
+                document.getElementById('loader-text').innerText = "تم بنجاح! جاري التحويل...";
+                setTimeout(() => {
+                    window.location.href = "adm.html";
+                }, 1500);
+
             } catch (err) {
-                console.error("Error:", err);
-                alert("مشكلة في الحفظ: " + err.message);
+                console.error("Upload Error:", err);
+                alert("حدث خطأ أثناء الرفع: " + err.message);
                 document.getElementById('loader-overlay').style.display = 'none';
             }
         };
