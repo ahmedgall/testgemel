@@ -3,133 +3,178 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Bride | بوابة الشركاء</title>
+    <title>The Bride | لوحة تحكم الشركاء</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; margin: 0; }
+        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; }
         .glass-card { background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.05); transition: 0.3s; cursor: pointer; }
         .glass-card:hover { border-color: #e11d48; transform: translateY(-5px); background: rgba(225, 29, 72, 0.05); }
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem; }
-        #loading-screen { position: fixed; inset: 0; background: #050505; display: flex; align-items: center; justify-content: center; z-index: 50; }
-        .loader { width: 48px; height: 48px; border: 5px solid rgba(255,255,255,0.1); border-bottom-color: #e11d48; border-radius: 50%; animation: rotation 1s linear infinite; }
-        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .input-style { background: #111; border: 1px solid #333; border-radius: 12px; padding: 12px; width: 100%; color: white; outline: none; }
+        .input-style:focus { border-color: #e11d48; }
+        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; flex-direction: column; }
+        .loader { width: 40px; height: 40px; border: 4px solid #fff; border-bottom-color: #e11d48; border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="p-8">
+<body class="p-4 md:p-8">
 
-    <div id="loading-screen">
-        <div class="text-center">
-            <div class="loader mb-4 mx-auto"></div>
-            <p class="text-rose-600 font-bold animate-pulse">جاري التحقق من الرابط الآمن...</p>
-        </div>
+    <div id="loading-overlay">
+        <div class="loader mb-4"></div>
+        <p class="text-rose-600 font-bold">جاري رفع البيانات والصور...</p>
     </div>
 
-    <div id="main-content" class="max-w-5xl mx-auto hidden">
-        <header class="text-center mb-12">
-            <div class="mb-4 inline-block p-3 rounded-2xl bg-rose-600/10 text-rose-600 font-bold text-xs tracking-widest uppercase">
-                Fixaa Arab Exclusive
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-12 border-b border-white/5 pb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-rose-600">The Bride Dashboard</h1>
+                <p class="text-gray-400 text-sm">أهلاً بك يا شريك النجاح</p>
             </div>
-            <h1 class="text-4xl font-bold text-white mb-2">مرحباً بك في <span class="text-rose-600">The Bride</span></h1>
-            <p class="text-gray-400">اختر القسم الخاص بك لإكمال إعداد حسابك كشريك</p>
+            <button onclick="logout()" class="text-xs bg-white/5 px-4 py-2 rounded-lg hover:bg-rose-900/20 transition">تسجيل خروج</button>
         </header>
 
-        <div id="categories" class="category-grid"></div>
-        
-        <footer class="mt-20 text-center border-t border-white/5 pt-8">
-            <p class="text-gray-600 text-[10px] tracking-[4px]">POWERED BY FIXAA ARAB</p>
-        </footer>
+        <div id="category-selection">
+            <h2 class="text-xl mb-8 text-center font-bold">اختر نوع نشاطك التجاري:</h2>
+            <div id="categories-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                </div>
+        </div>
+
+        <div id="upload-form" class="hidden max-w-2xl mx-auto bg-zinc-900/50 p-8 rounded-3xl border border-white/5 animate-fadeIn">
+            <button onclick="showCategories()" class="text-rose-500 mb-6 flex items-center gap-2"> ⬅ رجوع للأقسام</button>
+            <h2 id="selected-title" class="text-2xl font-bold mb-6 text-white text-center"></h2>
+            
+            <form id="dataForm" class="space-y-4">
+                <input type="text" id="placeName" placeholder="اسم المكان / النشاط" class="input-style" required>
+                <input type="text" id="placeAddress" placeholder="العنوان بالتفصيل (محافظة - منطقة - شارع)" class="input-style" required>
+                <textarea id="placeDesc" placeholder="وصف قصير عن الخدمات المميزة" class="input-style h-24"></textarea>
+                
+                <div class="border-2 border-dashed border-zinc-700 p-6 rounded-2xl text-center">
+                    <p class="text-gray-400 mb-4">ارفع صور المكان (يمكنك اختيار أكثر من صورة)</p>
+                    <input type="file" id="placeImages" multiple accept="image/*" class="hidden" onchange="updateFileCount()">
+                    <button type="button" onclick="document.getElementById('placeImages').click()" class="bg-zinc-800 px-6 py-2 rounded-xl border border-zinc-600 hover:border-rose-600 transition">
+                        📸 اختيار الصور
+                    </button>
+                    <p id="fileCount" class="text-xs text-rose-500 mt-2"></p>
+                </div>
+
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 py-4 rounded-2xl font-bold text-lg mt-4 transition-all">
+                    حفظ البيانات ونشرها
+                </button>
+            </form>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getAuth, isSignInWithEmailLink, signInWithEmailLink } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 
-        // إعدادات Firebase (نفس اللي في الصفحة الأولى)
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
             authDomain: "gggg-4cab7.firebaseapp.com",
             projectId: "gggg-4cab7",
             storageBucket: "gggg-4cab7.firebasestorage.app",
             messagingSenderId: "51351904886",
-            appId: "1:51351904886:web:e71724e6bbd2837f333557",
-            measurementId: "G-VKVNTDXW0P"
+            appId: "1:51351904886:web:e71724e6bbd2837f333557"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
 
-        async function completeSignIn() {
-            // 1. هل الرابط الحالي هو رابط دخول Firebase؟
-            if (isSignInWithEmailLink(auth, window.location.href)) {
-                
-                // 2. محاولة جلب الإيميل من التخزين المحلي
-                let email = window.localStorage.getItem('emailForSignIn');
-                
-                // 3. لو مش موجود (فتح اللينك من جهاز تاني مثلاً) نطلبه منه
-                if (!email) {
-                    email = window.prompt('من فضلك اكتب الإيميل الذي طلبت عليه رابط الدخول للتأكيد:');
+        let currentCategory = "";
+        let currentUser = null;
+
+        // التحقق من الدخول
+        onAuthStateChanged(auth, user => {
+            if (!user) window.location.href = "index.html";
+            currentUser = user;
+        });
+
+        // قائمة الأقسام الـ 10
+        const sections = [
+            { name: "قاعات أفراح", icon: "🏰", id: "halls" },
+            { name: "كوافير / سنتر", icon: "💄", id: "hair-center" },
+            { name: "ميك أب ارتست", icon: "🎨", id: "makeup" },
+            { name: "فساتين زفاف", icon: "👗", id: "dresses" },
+            { name: "ليموزين", icon: "🚗", id: "limo" },
+            { name: "بدل رجالي", icon: "🤵", id: "suits" },
+            { name: "هاني مون / سفر", icon: "✈️", id: "honeymoon" },
+            { name: "فوتوغرافير", icon: "📸", id: "photography" },
+            { name: "دي جي وصوتيات", icon: "🎵", id: "dj" },
+            { name: "تجهيز بوفيه", icon: "🍽️", id: "catering" }
+        ];
+
+        // رندر الأقسام
+        const grid = document.getElementById('categories-grid');
+        sections.forEach(sec => {
+            const card = document.createElement('div');
+            card.className = "glass-card p-6 rounded-3xl text-center";
+            card.innerHTML = `<div class="text-3xl mb-2">${sec.icon}</div><div class="font-bold text-sm">${sec.name}</div>`;
+            card.onclick = () => openForm(sec);
+            grid.appendChild(card);
+        });
+
+        window.openForm = (sec) => {
+            currentCategory = sec.id;
+            document.getElementById('selected-title').innerText = "إضافة بيانات: " + sec.name;
+            document.getElementById('category-selection').classList.add('hidden');
+            document.getElementById('upload-form').classList.remove('hidden');
+        };
+
+        window.showCategories = () => {
+            document.getElementById('upload-form').classList.add('hidden');
+            document.getElementById('category-selection').classList.remove('hidden');
+        };
+
+        window.updateFileCount = () => {
+            const files = document.getElementById('placeImages').files;
+            document.getElementById('fileCount').innerText = `تم اختيار ${files.length} صور`;
+        };
+
+        // عملية الرفع للفايرستور والستورج
+        document.getElementById('dataForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const images = document.getElementById('placeImages').files;
+            if (images.length === 0) return alert("من فضلك ارفع صورة واحدة على الأقل للمكان");
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                const imageUrls = [];
+                // 1. رفع الصور لـ Firebase Storage
+                for (let i = 0; i < images.length; i++) {
+                    const storageRef = ref(storage, `places/${currentCategory}/${Date.now()}-${images[i].name}`);
+                    await uploadBytes(storageRef, images[i]);
+                    const url = await getDownloadURL(storageRef);
+                    imageUrls.push(url);
                 }
 
-                try {
-                    // 4. إتمام عملية الدخول فعلياً
-                    await signInWithEmailLink(auth, email, window.location.href);
-                    
-                    // مسح الإيميل من التخزين بعد النجاح
-                    window.localStorage.removeItem('emailForSignIn');
-                    
-                    // 5. إظهار المحتوى
-                    document.getElementById('loading-screen').classList.add('hidden');
-                    document.getElementById('main-content').classList.remove('hidden');
-                    renderCategories();
+                // 2. حفظ البيانات في Firestore
+                await addDoc(collection(db, "partners_data"), {
+                    userId: currentUser.uid,
+                    category: currentCategory,
+                    name: document.getElementById('placeName').value,
+                    address: document.getElementById('placeAddress').value,
+                    description: document.getElementById('placeDesc').value,
+                    images: imageUrls,
+                    createdAt: serverTimestamp()
+                });
 
-                } catch (error) {
-                    console.error("Firebase Auth Error:", error.code);
-                    alert("الرابط غير صالح أو انتهت صلاحيته. يرجى طلب رابط جديد.");
-                    window.location.href = "index.html"; // ارجع لصفحة التسجيل
-                }
-            } else {
-                // لو حد حاول يفتح oo.html مباشرة من غير لينك
-                window.location.href = "index.html";
+                alert("تم حفظ بياناتك بنجاح وسيتم عرضها في التطبيق!");
+                location.reload();
+
+            } catch (error) {
+                console.error(error);
+                alert("حدث خطأ أثناء الرفع، حاول مرة أخرى.");
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
             }
-        }
+        };
 
-        function renderCategories() {
-            const sections = [
-                { id: 1, name: "قاعات الأفراح", icon: "🏰" },
-                { id: 2, name: "مراكز التجميل", icon: "💄" },
-                { id: 3, name: "مصوري الفوتوغرافيا", icon: "📸" },
-                { id: 4, name: "أتيليهات الفساتين", icon: "👗" },
-                { id: 5, name: "بدل العرسان", icon: "🤵" },
-                { id: 6, name: "محلات الذهب", icon: "💍" },
-                { id: 7, name: "تجهيز بوفيه", icon: "🍽️" },
-                { id: 8, name: "فرق استعراضية", icon: "💃" },
-                { id: 9, name: "سيارات الزفاف", icon: "🚗" },
-                { id: 10, name: "تجهيز شقق", icon: "🏠" },
-                { id: 11, name: "محلات العطور", icon: "✨" },
-                { id: 12, name: "دعوات الزفاف", icon: "✉️" },
-                { id: 13, name: "سياحة وشهر عسل", icon: "✈️" },
-                { id: 14, name: "زهور وكوشات", icon: "💐" },
-                { id: 15, name: "دي جي وصوتيات", icon: "🎵" }
-            ];
-
-            const container = document.getElementById('categories');
-            container.innerHTML = ""; // تنظيف الحاوية
-            sections.forEach(sec => {
-                const card = document.createElement('div');
-                card.className = "glass-card p-6 rounded-3xl text-center shadow-lg";
-                card.innerHTML = `<div class="text-4xl mb-4">${sec.icon}</div><h3 class="text-lg font-bold">${sec.name}</h3>`;
-                card.onclick = () => {
-                    // هنا ممكن توجهه لصفحة رفع الداتا الخاصة بكل قسم
-                    console.log("Selected Section ID:", sec.id);
-                    alert("تم اختيار قسم: " + sec.name + "\nسيتم تفعيل لوحة التحكم الخاصة بك قريباً.");
-                };
-                container.appendChild(card);
-            });
-        }
-
-        // تشغيل العملية فور تحميل الصفحة
-        window.addEventListener('DOMContentLoaded', completeSignIn);
+        window.logout = () => signOut(auth).then(() => location.reload());
     </script>
 </body>
 </html>
