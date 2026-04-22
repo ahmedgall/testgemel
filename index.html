@@ -63,6 +63,7 @@
             border-top-color: #fff;
             animation: spin 1s linear infinite;
             display: inline-block;
+            vertical-align: middle;
             margin-left: 10px;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -88,8 +89,8 @@
                     placeholder="name@gmail.com">
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg shadow-xl">
-                <span>إرسال رابط الدخول</span>
+            <button type="submit" id="submitBtn" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg shadow-xl flex items-center justify-center">
+                <span id="btnText">إرسال رابط الدخول</span>
             </button>
         </form>
 
@@ -106,6 +107,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
         import { getAuth, sendSignInLinkToEmail } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
+        // إعدادات الـ Firebase الخاصة بـ Fixaa Arab
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
             authDomain: "gggg-4cab7.firebaseapp.com",
@@ -123,30 +125,33 @@
             e.preventDefault();
             const email = document.getElementById('userEmail').value;
             const btn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
             const msgContainer = document.getElementById('msgContainer');
             const msg = document.getElementById('msg');
 
-            // تعديل الرابط ليكون ثابت ومطابق لـ Authorized Domains
             const actionCodeSettings = {
+                // الرابط اللي هيتم التحويل عليه بعد ما العميل يضغط على اللينك في الإيميل
                 url: 'https://ahmedgall.github.io/testgemel/oo.html',
                 handleCodeInApp: true,
             };
 
             btn.disabled = true;
-            btn.innerHTML = '<span class="loader"></span> جاري الإرسال...';
+            btnText.innerHTML = '<span class="loader"></span> جاري الإرسال...';
 
             try {
                 await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+                // تخزين الإيميل في الـ Local Storage عشان نحتاجه في صفحة oo.html لإتمام الدخول
                 window.localStorage.setItem('emailForSignIn', email);
                 
                 msgContainer.classList.remove('hidden');
                 msg.innerText = "تم إرسال رابط الدخول السري بنجاح. تفقد بريدك الوارد الآن.";
-                btn.innerHTML = '✅ تم الإرسال';
+                btnText.innerHTML = '✅ تم الإرسال';
+                btn.style.opacity = "0.7";
             } catch (error) {
-                console.error("Error Detail:", error.code);
-                alert("خطأ: " + error.message);
+                console.error("Firebase Error:", error.code);
+                alert("حدث خطأ: " + error.message);
                 btn.disabled = false;
-                btn.innerHTML = 'إرسال رابط الدخول';
+                btnText.innerHTML = 'إرسال رابط الدخول';
             }
         });
     </script>
