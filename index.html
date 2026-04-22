@@ -8,40 +8,52 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #e11d48; --bg-dark: #050505; }
-        body {
-            font-family: 'Cairo', sans-serif; background-color: var(--bg-dark); color: #ffffff; 
-            min-height: 100vh; display: flex; align-items: center; justify-content: center;
-            background-image: radial-gradient(circle at top right, rgba(225, 29, 72, 0.05), transparent);
-        }
-        .auth-card { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; }
-        .input-dark { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.4s; }
-        .input-dark:focus { border-color: var(--primary); outline: none; }
-        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); }
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-dark); color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .auth-card { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; width: 100%; max-width: 450px; padding: 2.5rem; }
+        .input-dark { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.4s; width: 100%; padding: 1rem; border-radius: 1rem; text-align: center; color: white; margin-bottom: 1rem; }
+        .input-dark:focus { border-color: var(--primary); outline: none; background: rgba(255, 255, 255, 0.07); }
+        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); width: 100%; padding: 1rem; border-radius: 1rem; font-weight: bold; transition: 0.3s; }
+        .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3); }
         .hidden { display: none; }
     </style>
 </head>
-<body class="p-6">
+<body>
 
-    <div class="auth-card w-full max-w-md p-10">
+    <div class="auth-card">
         <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-white mb-2">The Bride</h1>
-            <p id="statusText" class="text-gray-400 text-sm italic uppercase">تسجيل دخول الشركاء</p>
+            <p id="formTitle" class="text-gray-400 text-sm italic">تسجيل دخول الشركاء</p>
         </div>
 
-        <div id="step1" class="space-y-4">
-            <input type="tel" id="userPhone" class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="رقم الموبايل (2010...)">
-            <input type="password" id="userPass" class="w-full input-dark p-4 rounded-2xl text-white text-center" placeholder="كلمة السر">
-            
-            <button onclick="sendOTP()" id="mainBtn" class="w-full btn-premium py-4 rounded-2xl font-bold text-lg">إرسال كود التحقق</button>
-            
-            <p class="text-[10px] text-center text-gray-600 mt-4">سيتم إرسال الكود عبر الواتساب الخاص بك</p>
+        <div id="loginForm">
+            <input type="tel" id="loginPhone" class="input-dark" placeholder="رقم الموبايل (2010...)">
+            <input type="password" id="loginPass" class="input-dark" placeholder="كلمة السر">
+            <button onclick="handleAuth('login')" class="btn-premium">دخول</button>
+            <div class="flex justify-between mt-4 text-xs text-gray-500">
+                <button onclick="showForm('forgot')" class="hover:text-rose-500">نسيت الباسورد؟</button>
+                <button onclick="showForm('register')" class="hover:text-rose-500">إنشاء حساب جديد</button>
+            </div>
         </div>
 
-        <div id="step2" class="hidden space-y-4">
-            <p class="text-center text-rose-500 text-sm">أدخل الكود المكون من 6 أرقام</p>
-            <input type="text" id="otpInput" class="w-full input-dark p-4 rounded-2xl text-white text-center text-2xl tracking-[10px]" placeholder="000000">
-            <button onclick="verifyAndLogin()" class="w-full bg-green-600 py-4 rounded-2xl font-bold text-lg">تأكيد ودخول</button>
-            <button onclick="location.reload()" class="w-full text-gray-500 text-xs">رجوع؟</button>
+        <div id="registerForm" class="hidden">
+            <input type="tel" id="regPhone" class="input-dark" placeholder="رقم الموبايل">
+            <input type="password" id="regPass" class="input-dark" placeholder="كلمة السر">
+            <input type="password" id="regPassConfirm" class="input-dark" placeholder="تأكيد كلمة السر">
+            <button onclick="handleAuth('register')" class="btn-premium">إنشاء حساب وإرسال كود</button>
+            <button onclick="showForm('login')" class="w-full mt-4 text-xs text-gray-500">لديك حساب؟ سجل دخولك</button>
+        </div>
+
+        <div id="forgotForm" class="hidden">
+            <p class="text-xs text-gray-400 text-center mb-4">أدخل رقمك وسنرسل لك كود لإعادة التعيين</p>
+            <input type="tel" id="forgotPhone" class="input-dark" placeholder="رقم الموبايل">
+            <button onclick="handleAuth('forgot')" class="btn-premium">إرسال كود الاستعادة</button>
+            <button onclick="showForm('login')" class="w-full mt-4 text-xs text-gray-500">رجوع</button>
+        </div>
+
+        <div id="otpStep" class="hidden text-center">
+            <p class="text-rose-500 text-sm mb-4">أدخل الكود المرسل على واتساب</p>
+            <input type="text" id="otpInput" class="input-dark text-2xl tracking-[10px]" placeholder="000000" maxlength="6">
+            <button id="verifyBtn" class="btn-premium bg-green-600">تأكيد الرمز</button>
         </div>
 
         <div class="mt-8 text-center border-t border-white/5 pt-6 text-[10px] text-gray-600 tracking-[4px]">
@@ -49,52 +61,72 @@
         </div>
     </div>
 
-    <script>
-        const INSTANCE_ID = 'instance171381';
-        const TOKEN = '5fh5hfytsg5mml9n';
-        let generatedOTP;
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-        async function sendOTP() {
-            const phone = document.getElementById('userPhone').value;
-            const pass = document.getElementById('userPass').value;
+        const firebaseConfig = {
+            apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
+            authDomain: "gggg-4cab7.firebaseapp.com",
+            projectId: "gggg-4cab7",
+            storageBucket: "gggg-4cab7.firebasestorage.app",
+            messagingSenderId: "51351904886",
+            appId: "1:51351904886:web:e71724e6bbd2837f333557"
+        };
 
-            if (!phone || !pass) return alert("اكتب الرقم والباسورد يا بطل!");
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-            generatedOTP = Math.floor(100000 + Math.random() * 900000);
+        const API_URL = "https://api.ultramsg.com/instance171381/messages/chat";
+        const TOKEN = "5fh5hfytsg5mml9n";
+        let tempOTP, currentAction, pendingData;
+
+        window.showForm = (type) => {
+            document.querySelectorAll('.auth-card > div:not(.text-center):not(.mt-8)').forEach(d => d.classList.add('hidden'));
+            document.getElementById(type + 'Form').classList.remove('hidden');
+            document.getElementById('formTitle').innerText = type === 'login' ? 'دخول الشركاء' : (type === 'register' ? 'انضم إلينا' : 'استعادة الحساب');
+        };
+
+        window.handleAuth = async (action) => {
+            currentAction = action;
+            const phone = document.getElementById(action + 'Phone').value;
+            if (!phone) return alert("دخل الرقم يا بطل!");
+
+            // توليد OTP
+            tempOTP = Math.floor(100000 + Math.random() * 900000);
             
-            const btn = document.getElementById('mainBtn');
-            btn.disabled = true;
-            btn.innerText = 'جاري الإرسال...';
-
-            // إرسال للواتساب
-            const url = `https://api.ultramsg.com/${INSTANCE_ID}/messages/chat`;
-            const params = new URLSearchParams({
-                "token": TOKEN,
-                "to": phone,
-                "body": `*The Bride Security*\n\nكود دخول لوحة التحكم الخاص بك هو: *${generatedOTP}*\n\nكلمة السر المدخلة: ******`
-            });
-
+            // إرسال واتساب
+            const params = new URLSearchParams({ "token": TOKEN, "to": phone, "body": `كود التحقق في The Bride هو: *${tempOTP}*` });
+            
             try {
-                const response = await fetch(url, { method: 'POST', body: params });
-                const res = await response.json();
-                if (res.sent === "true") {
-                    document.getElementById('step1').classList.add('hidden');
-                    document.getElementById('step2').classList.remove('hidden');
-                    document.getElementById('statusText').innerText = "تم إرسال الكود";
-                }
-            } catch (e) { alert("حدث خطأ في الإرسال"); }
-        }
+                await fetch(API_URL, { method: 'POST', body: params });
+                document.getElementById(action + 'Form').classList.add('hidden');
+                document.getElementById('otpStep').classList.remove('hidden');
+            } catch (e) { alert("مشكلة في إرسال الواتساب"); }
+        };
 
-        function verifyAndLogin() {
-            const input = document.getElementById('otpInput').value;
-            if (input == generatedOTP) {
-                // حفظ الجلسة في المتصفح
-                sessionStorage.setItem('isPartner', 'true');
-                window.location.href = "oo.html";
-            } else {
-                alert("الكود غلط، راجع الواتساب!");
+        document.getElementById('verifyBtn').onclick = async () => {
+            const code = document.getElementById('otpInput').value;
+            if (code != tempOTP) return alert("الكود غلط!");
+
+            // تنفيذ الأكشن بعد التأكد من الواتساب
+            if (currentAction === 'register') {
+                const phone = document.getElementById('regPhone').value;
+                const pass = document.getElementById('regPass').value;
+                await setDoc(doc(db, "partners", phone), { password: pass });
+                alert("تم إنشاء الحساب!");
+            } 
+            
+            if (currentAction === 'login') {
+                const phone = document.getElementById('loginPhone').value;
+                const pass = document.getElementById('loginPass').value;
+                const userDoc = await getDoc(doc(db, "partners", phone));
+                if (!userDoc.exists() || userDoc.data().password !== pass) return alert("بيانات غلط!");
             }
-        }
+
+            sessionStorage.setItem('isAuth', 'true');
+            window.location.href = "oo.html";
+        };
     </script>
 </body>
 </html>
