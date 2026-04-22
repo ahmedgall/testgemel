@@ -8,25 +8,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #e11d48; --bg-dark: #050505; }
-        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-dark); color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        body { font-family: 'Cairo', sans-serif; background-color: var(--bg-dark); color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
         .auth-card { background: rgba(15, 15, 15, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; width: 100%; max-width: 450px; padding: 2.5rem; }
         .input-dark { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.4s; width: 100%; padding: 1rem; border-radius: 1rem; text-align: center; color: white; margin-bottom: 1rem; }
         .input-dark:focus { border-color: var(--primary); outline: none; background: rgba(255, 255, 255, 0.07); }
-        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); width: 100%; padding: 1rem; border-radius: 1rem; font-weight: bold; transition: 0.3s; cursor: pointer; }
+        .btn-premium { background: linear-gradient(135deg, #e11d48 0%, #9f1239 100%); width: 100%; padding: 1rem; border-radius: 1rem; font-weight: bold; transition: 0.3s; cursor: pointer; color: white; border: none; }
         .btn-premium:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(225, 29, 72, 0.3); }
         .hidden { display: none; }
+        #loader { display: none; margin-bottom: 1rem; }
     </style>
 </head>
 <body>
 
     <div class="auth-card">
         <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-white mb-2">The Bride</h1>
+            <h1 class="text-4xl font-bold text-white mb-2 tracking-tighter">The Bride</h1>
             <p id="formTitle" class="text-gray-400 text-sm italic">تسجيل دخول الشركاء</p>
         </div>
 
         <div id="loginForm">
-            <input type="tel" id="loginPhone" class="input-dark" placeholder="رقم الموبايل (2010...)">
+            <input type="tel" id="loginPhone" class="input-dark" placeholder="رقم الموبايل (مثال: 2010...)">
             <input type="password" id="loginPass" class="input-dark" placeholder="كلمة السر">
             <button onclick="handleAuth('login')" class="btn-premium">دخول</button>
             <div class="flex justify-between mt-4 text-xs text-gray-500">
@@ -36,7 +37,7 @@
         </div>
 
         <div id="registerForm" class="hidden">
-            <input type="tel" id="regPhone" class="input-dark" placeholder="رقم الموبايل">
+            <input type="tel" id="regPhone" class="input-dark" placeholder="رقم الموبايل (2010...)">
             <input type="password" id="regPass" class="input-dark" placeholder="كلمة السر">
             <input type="password" id="regPassConfirm" class="input-dark" placeholder="تأكيد كلمة السر">
             <button onclick="handleAuth('register')" class="btn-premium">إنشاء حساب وإرسال كود</button>
@@ -44,13 +45,14 @@
         </div>
 
         <div id="forgotForm" class="hidden">
-            <p class="text-xs text-gray-400 text-center mb-4">أدخل رقمك وسنرسل لك كود لإعادة التعيين</p>
+            <p class="text-xs text-gray-400 text-center mb-4">أدخل رقمك وسنرسل لك كود لاستعادة حسابك</p>
             <input type="tel" id="forgotPhone" class="input-dark" placeholder="رقم الموبايل">
             <button onclick="handleAuth('forgot')" class="btn-premium">إرسال كود الاستعادة</button>
             <button onclick="showForm('login')" class="w-full mt-4 text-xs text-gray-500">رجوع</button>
         </div>
 
         <div id="otpStep" class="hidden text-center">
+            <div id="loader" class="mx-auto w-8 h-8 border-4 border-rose-600 border-t-transparent rounded-full animate-spin"></div>
             <p class="text-rose-500 text-sm mb-4">أدخل الكود المرسل على واتساب</p>
             <input type="text" id="otpInput" class="input-dark text-2xl tracking-[10px]" placeholder="000000" maxlength="6">
             <button id="verifyBtn" class="btn-premium bg-green-600">تأكيد الرمز</button>
@@ -80,85 +82,93 @@
         const API_URL = "https://api.ultramsg.com/instance171381/messages/chat";
         const TOKEN = "5fh5hfytsg5mml9n";
         
-        // خزن الأكواد في الـ window عشان تضمن وصول الـ Functions ليها
         window.currentOTP = "";
         window.currentAction = "";
         window.currentUserPhone = "";
+        window.tempPass = ""; 
 
         window.showForm = (type) => {
             document.querySelectorAll('.auth-card > div:not(.text-center):not(.mt-8)').forEach(d => d.classList.add('hidden'));
             document.getElementById(type + 'Form').classList.remove('hidden');
-            document.getElementById('formTitle').innerText = type === 'login' ? 'دخول الشركاء' : (type === 'register' ? 'انضم إلينا' : 'استعادة الحساب');
+            const titles = { 'login': 'دخول الشركاء', 'register': 'انضم إلينا', 'forgot': 'استعادة الحساب' };
+            document.getElementById('formTitle').innerText = titles[type];
         };
 
         window.handleAuth = async (action) => {
-            window.currentAction = action;
-            const phoneField = document.getElementById(action + 'Phone');
-            const phone = phoneField.value.trim();
-
+            const phone = document.getElementById(action + 'Phone').value.trim();
             if (!phone) return alert("دخل الرقم يا بطل!");
+            if (!phone.startsWith('20')) return alert("يرجى إدخال الرقم بكود الدولة (مثال: 2010...)");
 
-            // توليد OTP كـ String لضمان دقة المقارنة
-            window.currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            // تحقق من البيانات قبل الإرسال
+            if (action === 'register') {
+                const pass = document.getElementById('regPass').value;
+                const confirm = document.getElementById('regPassConfirm').value;
+                if (pass.length < 6) return alert("كلمة السر ضعيفة (أقل من 6 رموز)");
+                if (pass !== confirm) return alert("كلمة السر غير متطابقة!");
+                
+                // التأكد أن المستخدم غير موجود
+                const userCheck = await getDoc(doc(db, "partners", phone));
+                if (userCheck.exists()) return alert("هذا الرقم مسجل بالفعل، قم بتسجيل الدخول");
+                window.tempPass = pass;
+            }
+
+            if (action === 'login') {
+                const pass = document.getElementById('loginPass').value;
+                if (!pass) return alert("أدخل كلمة السر");
+                window.tempPass = pass;
+            }
+
+            window.currentAction = action;
             window.currentUserPhone = phone;
-            
-            console.log("OTP for testing: " + window.currentOTP);
+            window.currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
 
+            // إرسال الكود
             const params = new URLSearchParams({ 
-                "token": TOKEN, 
-                "to": phone, 
+                "token": TOKEN, "to": phone, 
                 "body": `*The Bride*\n\nكود التحقق الخاص بك هو: *${window.currentOTP}*` 
             });
             
             try {
                 const response = await fetch(API_URL, { method: 'POST', body: params });
                 const result = await response.json();
-                
                 if (result.sent === "true" || result.success) {
                     document.getElementById(action + 'Form').classList.add('hidden');
                     document.getElementById('otpStep').classList.remove('hidden');
                 } else {
-                    alert("فشل إرسال الكود. تأكد من الرقم (مثال: 2010...)");
+                    alert("خطأ في إرسال الكود، تأكد من الرقم");
                 }
-            } catch (e) { 
-                alert("مشكلة في سيرفر الواتساب"); 
-            }
+            } catch (e) { alert("عطلاً في سيرفر الواتساب"); }
         };
 
         document.getElementById('verifyBtn').onclick = async () => {
             const inputCode = document.getElementById('otpInput').value.trim();
+            if (inputCode !== window.currentOTP) return alert("كود التحقق خطأ!");
 
-            if (inputCode !== window.currentOTP) {
-                return alert("الكود غلط! راجع الواتساب.");
-            }
+            document.getElementById('loader').style.display = 'block';
 
-            // لو الكود صح، نبدأ تنفيذ العمليات
             try {
                 if (window.currentAction === 'register') {
-                    const pass = document.getElementById('regPass').value;
-                    const confirm = document.getElementById('regPassConfirm').value;
-                    if (pass !== confirm) return alert("الباسورد مش متطابق!");
-                    
-                    await setDoc(doc(db, "partners", window.currentUserPhone), { password: pass });
+                    await setDoc(doc(db, "partners", window.currentUserPhone), { 
+                        password: window.tempPass,
+                        regDate: new Date().getTime()
+                    });
                 } 
                 
                 if (window.currentAction === 'login') {
-                    const pass = document.getElementById('loginPass').value;
                     const userDoc = await getDoc(doc(db, "partners", window.currentUserPhone));
-                    
-                    if (!userDoc.exists() || userDoc.data().password !== pass) {
-                        return alert("رقم الموبايل أو الباسورد غلط!");
+                    if (!userDoc.exists() || userDoc.data().password !== window.tempPass) {
+                        document.getElementById('loader').style.display = 'none';
+                        return alert("البيانات غير صحيحة!");
                     }
                 }
 
-                // حفظ الداتا في السشن عشان الصفحة اللي جاية
                 sessionStorage.setItem('isAuth', 'true');
                 sessionStorage.setItem('userPhone', window.currentUserPhone);
-                
                 window.location.href = "oo.html";
+
             } catch (err) {
-                alert("حدث خطأ في قاعدة البيانات");
-                console.error(err);
+                alert("خطأ في قاعدة البيانات");
+                document.getElementById('loader').style.display = 'none';
             }
         };
     </script>
