@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Bride | لوحة تحكم الشريك</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; }
@@ -14,85 +15,85 @@
         .time-slot { transition: 0.3s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
         .time-slot.closed { background: #450a0a; border-color: #e11d48; color: #ffffff; opacity: 0.5; }
         .time-slot.open { background: #064e3b; border-color: #10b981; color: #ffffff; }
-        .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 10px; font-weight: bold; }
         .input-dark { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; color: white; width: 100%; }
-        #loader { position: fixed; inset: 0; background: #050505; z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        #loader { position: fixed; inset: 0; background: #050505; z-index: 1000; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+        .img-container:hover .delete-btn { opacity: 1; }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="loader"><div class="w-12 h-12 border-4 border-t-rose-600 border-white/10 rounded-full animate-spin"></div></div>
+    <div id="loader">
+        <div class="w-12 h-12 border-4 border-t-rose-600 border-white/10 rounded-full animate-spin mb-4"></div>
+        <p id="loader-text" class="text-rose-600 text-sm font-bold">جاري تحميل البيانات...</p>
+    </div>
 
     <div class="max-w-7xl mx-auto">
         <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
             <div class="text-center md:text-right">
                 <h1 class="text-3xl font-bold">لوحة تحكم <span class="text-rose-600" id="businessName">...</span></h1>
-                <p class="text-gray-500 text-sm">إدارة نشاطك وحجوزاتك بكل سهولة</p>
+                <p class="text-gray-400 text-sm">إدارة نشاطك وحجوزاتك من مكان واحد</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="switchTab('settings')" class="bg-zinc-800 p-3 rounded-xl hover:bg-zinc-700 transition">تعديل النشاط</button>
-                <button onclick="logout()" class="bg-rose-900/30 text-rose-500 p-3 rounded-xl hover:bg-rose-900 transition font-bold">خروج</button>
+                <button onclick="switchTab('settings')" class="bg-zinc-800 px-6 py-3 rounded-xl hover:bg-zinc-700 transition font-bold">تعديل النشاط</button>
+                <button onclick="logout()" class="bg-rose-900/30 text-rose-500 px-6 py-3 rounded-xl hover:bg-rose-900 transition font-bold">خروج</button>
             </div>
         </div>
 
         <div class="flex gap-8 mb-8 border-b border-white/10 pb-2 overflow-x-auto no-scrollbar">
-            <button onclick="switchTab('bookings')" id="tab-bookings" class="tab-btn active pb-2 font-bold whitespace-nowrap">الحجوزات (القادمة)</button>
-            <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn pb-2 font-bold whitespace-nowrap">المواعيد المتاحة</button>
+            <button onclick="switchTab('bookings')" id="tab-bookings" class="tab-btn active pb-2 font-bold whitespace-nowrap">الحجوزات</button>
+            <button onclick="switchTab('schedule')" id="tab-schedule" class="tab-btn pb-2 font-bold whitespace-nowrap">المواعيد</button>
             <button onclick="switchTab('reviews')" id="tab-reviews" class="tab-btn pb-2 font-bold whitespace-nowrap">التقييمات</button>
         </div>
 
-        <div id="section-bookings" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            </div>
+        <div id="section-bookings" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
 
         <div id="section-schedule" class="hidden">
-            <div class="glass-card p-6 md:p-10">
-                <div class="flex justify-between items-center mb-8">
-                    <h2 class="text-xl font-bold">جدول المواعيد اليومي</h2>
-                    <span class="text-xs text-gray-500 italic">اضغط على الساعة للقفل/الفتح</span>
-                </div>
-                <div class="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-3" id="hoursGrid">
-                    </div>
+            <div class="glass-card p-6 md:p-10 text-center">
+                <h2 class="text-xl font-bold mb-4">جدول المواعيد اليومي</h2>
+                <div class="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-8 gap-3" id="hoursGrid"></div>
             </div>
         </div>
 
         <div id="section-reviews" class="hidden space-y-4">
-            <div class="glass-card p-6 flex items-center justify-around">
-                <div class="text-center">
-                    <p class="text-gray-400 text-sm mb-1">التقييم العام</p>
-                    <h2 class="text-6xl font-black text-rose-600" id="totalRate">0.0</h2>
-                </div>
-                <div class="h-16 w-[1px] bg-white/10"></div>
-                <div id="starsContainer" class="text-yellow-500 text-2xl tracking-widest"></div>
+            <div class="glass-card p-8 flex items-center justify-around text-center">
+                <div><p class="text-gray-400 text-sm mb-1">التقييم العام</p><h2 class="text-5xl font-black text-rose-600" id="totalRate">0.0</h2></div>
             </div>
-            <div id="reviewsList" class="space-y-4">
-                </div>
+            <div id="reviewsList" class="space-y-4"></div>
         </div>
 
-        <div id="section-settings" class="hidden max-w-2xl mx-auto">
+        <div id="section-settings" class="hidden max-w-3xl mx-auto">
             <div class="glass-card p-8 space-y-6">
-                <h2 class="text-2xl font-bold text-rose-500 mb-6">تعديل بيانات النشاط</h2>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-2">اسم النشاط</label>
-                    <input type="text" id="editName" class="input-dark">
+                <h2 class="text-2xl font-bold text-rose-500">تعديل بيانات النشاط</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div><label class="block text-xs text-gray-500 mb-2">اسم النشاط</label><input type="text" id="editName" class="input-dark"></div>
+                    <div><label class="block text-xs text-gray-500 mb-2">العنوان</label><input type="text" id="editAddress" class="input-dark"></div>
                 </div>
+
+                <div><label class="block text-xs text-gray-500 mb-2">الوصف</label><textarea id="editDesc" class="input-dark h-24"></textarea></div>
+
                 <div>
-                    <label class="block text-xs text-gray-500 mb-2">العنوان</label>
-                    <input type="text" id="editAddress" class="input-dark">
-                </div>
-                <div>
-                    <label class="block text-xs text-gray-500 mb-2">الوصف</label>
-                    <textarea id="editDesc" class="input-dark h-32"></textarea>
-                </div>
-                <div id="editImages" class="grid grid-cols-4 gap-2 mt-4">
+                    <label class="block text-sm font-bold text-white mb-4">معرض الصور الخاص بك</label>
+                    <div id="editImages" class="grid grid-cols-3 md:grid-cols-5 gap-4 mb-6">
+                        </div>
+                    
+                    <div class="border-2 border-dashed border-white/10 p-6 rounded-2xl text-center hover:border-rose-600 transition">
+                        <input type="file" id="addNewImgs" multiple accept="image/*" class="hidden" onchange="uploadMoreImages(this)">
+                        <div onclick="document.getElementById('addNewImgs').click()" class="cursor-pointer">
+                            <p class="text-rose-500 font-bold">+ إضافة صور جديدة للنشاط</p>
+                            <p class="text-[10px] text-gray-500 mt-1">سيتم ضغط الصور ورفعها تلقائياً</p>
+                        </div>
                     </div>
-                <button onclick="saveChanges()" class="w-full bg-green-600 p-4 rounded-xl font-bold hover:bg-green-700 transition mt-6">حفظ كل التعديلات</button>
+                </div>
+
+                <button onclick="saveChanges()" class="w-full bg-green-600 p-4 rounded-xl font-bold hover:bg-green-700 transition">حفظ التعديلات النهائية</button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDXLzoTGPV7uvmstWrXU8F3U7dZy1VCY2k",
@@ -106,146 +107,165 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const userPhone = sessionStorage.getItem('userPhone');
+        const IMGBB_API_KEY = '59e66336e76f59c8697669678e078972';
 
         if(!userPhone) window.location.href = "index.html";
 
         let myBusinessId = "";
-        let currentData = null;
+        let currentImages = [];
 
-        // 1. إدارة التبويبات
+        // 1. التبديل بين الأقسام
         window.switchTab = (tab) => {
             document.querySelectorAll('[id^="section-"]').forEach(s => s.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('section-' + tab).classList.remove('hidden');
-            if(document.getElementById('tab-' + tab)) document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('tab-' + tab).classList.add('active');
         };
 
-        // 2. سحب بيانات النشاط والإعدادات
+        // 2. التحميل الأولي للبيانات
         async function init() {
             const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
             const snap = await getDocs(q);
+            
             if(!snap.empty) {
                 myBusinessId = snap.docs[0].id;
-                currentData = snap.docs[0].data();
-                document.getElementById('businessName').innerText = currentData.name;
+                const data = snap.docs[0].data();
+                currentImages = data.images || [];
+
+                document.getElementById('businessName').innerText = data.name;
+                document.getElementById('editName').value = data.name;
+                document.getElementById('editAddress').value = data.address;
+                document.getElementById('editDesc').value = data.desc || "";
                 
-                // ملء بيانات التعديل
-                document.getElementById('editName').value = currentData.name;
-                document.getElementById('editAddress').value = currentData.address;
-                document.getElementById('editDesc').value = currentData.desc;
-                renderEditImages(currentData.images);
-                
-                loadHours(currentData.closedHours || []);
+                renderImages();
+                loadHours(data.closedHours || []);
                 loadBookings();
                 loadReviews();
             }
             document.getElementById('loader').style.display = 'none';
         }
 
-        // 3. عرض الصور في الإعدادات مع الحذف
-        function renderEditImages(imgs) {
+        // 3. عرض الصور مع زر الحذف
+        function renderImages() {
             const container = document.getElementById('editImages');
             container.innerHTML = "";
-            imgs.forEach((img, index) => {
+            currentImages.forEach((img, index) => {
                 const div = document.createElement('div');
-                div.className = "relative h-20 bg-cover bg-center rounded-lg border border-white/10";
-                div.style.backgroundImage = `url(${img})`;
-                div.innerHTML = `<button onclick="removeImg(${index})" class="absolute -top-2 -right-2 bg-rose-600 rounded-full w-5 h-5 text-[10px]">X</button>`;
+                div.className = "img-container relative aspect-square rounded-xl overflow-hidden border border-white/10";
+                div.innerHTML = `
+                    <img src="${img}" class="w-full h-full object-cover">
+                    <button onclick="removeImg(${index})" class="delete-btn absolute inset-0 bg-black/60 opacity-0 flex items-center justify-center transition text-rose-500 font-bold">حذف</button>
+                `;
                 container.appendChild(div);
             });
         }
 
+        // 4. حذف صورة
         window.removeImg = async (index) => {
-            if(!confirm("احذف الصورة دي؟")) return;
-            currentData.images.splice(index, 1);
-            await updateDoc(doc(db, "bride_services", myBusinessId), { images: currentData.images });
-            renderEditImages(currentData.images);
+            if(!confirm("هل أنت متأكد من حذف هذه الصورة؟")) return;
+            currentImages.splice(index, 1);
+            renderImages();
         };
 
+        // 5. رفع صور إضافية (مع الضغط)
+        window.uploadMoreImages = async (input) => {
+            const files = input.files;
+            if (files.length === 0) return;
+
+            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('loader-text').innerText = "جاري تحضير ورفع الصور الجديدة...";
+
+            try {
+                const options = { maxSizeMB: 0.4, maxWidthOrHeight: 1200, useWebWorker: true };
+                
+                for (let file of files) {
+                    const compressed = await imageCompression(file, options);
+                    const formData = new FormData();
+                    formData.append('image', compressed);
+
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+                    const result = await res.json();
+                    if(result.success) {
+                        currentImages.push(result.data.url);
+                    }
+                }
+                renderImages();
+                alert("تم إضافة الصور للمعرض بنجاح (لا تنسَ حفظ التعديلات)");
+            } catch (err) {
+                alert("خطأ أثناء الرفع");
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        };
+
+        // 6. حفظ كل التغييرات
         window.saveChanges = async () => {
-            await updateDoc(doc(db, "bride_services", myBusinessId), {
-                name: document.getElementById('editName').value,
-                address: document.getElementById('editAddress').value,
-                desc: document.getElementById('editDesc').value
-            });
-            alert("تم التحديث بنجاح!");
-            location.reload();
+            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('loader-text').innerText = "جاري الحفظ...";
+            
+            try {
+                await updateDoc(doc(db, "bride_services", myBusinessId), {
+                    name: document.getElementById('editName').value,
+                    address: document.getElementById('editAddress').value,
+                    desc: document.getElementById('editDesc').value,
+                    images: currentImages
+                });
+                alert("تم تحديث البيانات بنجاح!");
+                location.reload();
+            } catch (err) {
+                alert("فشل الحفظ");
+                document.getElementById('loader').style.display = 'none';
+            }
         };
 
-        // 4. الحجوزات (Live Updates)
+        // باقي الوظائف (الحجوزات، المواعيد، التقييمات)
         function loadBookings() {
             const q = query(collection(db, "bookings"), where("servicePhone", "==", userPhone));
             onSnapshot(q, (snap) => {
                 const list = document.getElementById('section-bookings');
                 list.innerHTML = "";
-                snap.forEach(docSnap => {
-                    const b = docSnap.data();
-                    const card = `
-                        <div class="glass-card p-6 flex flex-col md:flex-row gap-5 items-center">
-                            <div class="w-16 h-16 bg-rose-600/20 rounded-full flex items-center justify-center font-bold text-rose-500">${b.clientName[0]}</div>
-                            <div class="flex-1 text-center md:text-right">
-                                <h3 class="font-bold text-lg">${b.clientName} <span class="text-gray-500 text-xs">(${b.clientPhone})</span></h3>
-                                <p class="text-xs text-gray-400 mt-1">طريقة الدفع: <b class="text-white">${b.payMethod}</b> | المبلغ: <b class="text-green-500">${b.deposit} EGP</b></p>
-                                <p class="text-rose-500 font-bold text-sm mt-1">الموعد: ${b.date} - ${b.time}</p>
+                snap.forEach(d => {
+                    const b = d.data();
+                    list.innerHTML += `
+                        <div class="glass-card p-6 flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold">${b.clientName}</h3>
+                                <p class="text-xs text-rose-500">${b.date} | ${b.time}</p>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="updateBooking('${docSnap.id}', 'confirmed')" class="bg-green-600 px-4 py-2 rounded-lg text-xs font-bold">قبول</button>
-                                <button onclick="updateBooking('${docSnap.id}', 'rejected')" class="bg-zinc-800 px-4 py-2 rounded-lg text-xs font-bold text-rose-500">رفض</button>
-                            </div>
+                            <span class="text-[10px] bg-white/5 px-3 py-1 rounded-full">${b.status || 'معلق'}</span>
                         </div>`;
-                    list.innerHTML += card;
                 });
             });
         }
 
-        window.updateBooking = async (id, status) => {
-            await updateDoc(doc(db, "bookings", id), { status: status });
-            alert(status === 'confirmed' ? "تم قبول الحجز وتنبيه العميل" : "تم رفض الحجز");
-        };
-
-        // 5. المواعيد (Toggle Hours)
-        function loadHours(closedHours) {
+        function loadHours(closed) {
             const grid = document.getElementById('hoursGrid');
             grid.innerHTML = "";
             for(let i=0; i<24; i++) {
                 const h = i < 10 ? `0${i}:00` : `${i}:00`;
-                const isClosed = closedHours.includes(h);
+                const isClosed = closed.includes(h);
                 const div = document.createElement('div');
-                div.className = `time-slot p-3 rounded-xl text-center font-bold text-xs ${isClosed ? 'closed' : 'open'}`;
+                div.className = `time-slot p-2 rounded-lg text-[10px] font-bold ${isClosed ? 'closed' : 'open'}`;
                 div.innerText = h;
                 div.onclick = async () => {
-                    let newClosed = [...closedHours];
-                    if(isClosed) newClosed = newClosed.filter(item => item !== h);
-                    else newClosed.push(h);
-                    await updateDoc(doc(db, "bride_services", myBusinessId), { closedHours: newClosed });
-                    loadHours(newClosed);
+                    let newC = isClosed ? closed.filter(x => x !== h) : [...closed, h];
+                    await updateDoc(doc(db, "bride_services", myBusinessId), { closedHours: newC });
+                    loadHours(newC);
                 };
                 grid.appendChild(div);
             }
         }
 
-        // 6. التقييمات
         async function loadReviews() {
             const q = query(collection(db, "reviews"), where("serviceId", "==", myBusinessId));
             const snap = await getDocs(q);
             let total = 0;
-            const list = document.getElementById('reviewsList');
-            list.innerHTML = "";
-            
             snap.forEach(d => {
                 const r = d.data();
                 total += parseFloat(r.rate);
-                list.innerHTML += `
-                    <div class="glass-card p-4 border-r-4 border-r-rose-600">
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="font-bold">${r.userName}</span>
-                            <span class="text-yellow-500 text-xs">${"★".repeat(r.rate)}</span>
-                        </div>
-                        <p class="text-gray-400 text-sm">${r.comment}</p>
-                    </div>`;
+                document.getElementById('reviewsList').innerHTML += `<div class="glass-card p-4 text-sm">${r.comment}</div>`;
             });
-            const avg = snap.size > 0 ? (total / snap.size).toFixed(1) : 0;
-            document.getElementById('totalRate').innerText = avg;
+            document.getElementById('totalRate').innerText = snap.size > 0 ? (total/snap.size).toFixed(1) : "0.0";
         }
 
         window.logout = () => { sessionStorage.clear(); window.location.href = "index.html"; };
