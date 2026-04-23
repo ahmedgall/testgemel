@@ -5,27 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Bride | إدارة الخدمات</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; overflow-x: hidden; }
-        .category-card { 
-            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
-        }
-        .category-card:hover { 
-            border-color: #e11d48; transform: translateY(-10px); 
-            background: linear-gradient(145deg, rgba(225, 29, 72, 0.1), transparent);
-            box-shadow: 0 20px 40px rgba(225, 29, 72, 0.1);
-        }
-        .input-dark {
-            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 1.25rem; padding: 1rem; width: 100%; color: white; transition: 0.3s;
-        }
-        .input-dark:focus { border-color: #e11d48; background: rgba(255, 255, 255, 0.05); outline: none; }
-        #loader-overlay { 
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
-            z-index: 100; flex-direction: column; align-items: center; justify-content: center; 
-        }
+        body { font-family: 'Cairo', sans-serif; background-color: #050505; color: #ffffff; min-height: 100vh; }
+        .category-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); transition: 0.4s; cursor: pointer; }
+        .category-card:hover { border-color: #e11d48; transform: translateY(-10px); background: rgba(225, 29, 72, 0.1); }
+        .input-dark { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; padding: 1rem; width: 100%; color: white; }
+        #loader-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -34,42 +21,36 @@
 
     <div id="loader-overlay">
         <div class="w-16 h-16 border-4 border-t-rose-600 border-white/10 rounded-full spin mb-4"></div>
-        <p id="loader-text" class="text-rose-600 font-bold text-xl animate-pulse text-center px-4">جاري الفحص...</p>
+        <p id="loader-text" class="text-rose-600 font-bold text-center"></p>
     </div>
 
     <div class="max-w-6xl mx-auto">
         <header class="text-center mb-16">
-            <h1 class="text-5xl font-black text-white mb-4 tracking-tighter">THE BRIDE</h1>
-            <p class="text-gray-500 uppercase tracking-[5px] text-xs">Partner Data Center</p>
+            <h1 class="text-5xl font-black text-white mb-2">THE BRIDE</h1>
+            <p class="text-gray-500 uppercase tracking-widest text-xs">Partner Data Center</p>
         </header>
 
         <div id="step-categories" class="hidden">
-            <h2 class="text-2xl font-bold mb-10 text-center text-rose-500">أهلاً بك.. اختر نشاطك وأكمل بياناتك</h2>
+            <h2 class="text-2xl font-bold mb-10 text-center text-rose-500">اختر نشاطك</h2>
             <div id="categories-grid" class="grid grid-cols-2 lg:grid-cols-5 gap-6"></div>
         </div>
 
         <div id="step-form" class="hidden max-w-2xl mx-auto">
-            <button onclick="goBack()" class="flex items-center text-gray-500 hover:text-white mb-8 transition">
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M19 12H5m7 7l-7-7 7-7"/></svg>
-                رجوع للأقسام
-            </button>
-            
-            <div class="bg-zinc-900/40 p-8 rounded-[3rem] border border-white/5 shadow-2xl">
-                <h3 id="form-title" class="text-3xl font-bold mb-8 text-center text-white text-rose-600"></h3>
-                <form id="uploadDataForm" class="space-y-5">
-                    <input type="text" id="pName" placeholder="اسم القاعة / المحل / النشاط" class="input-dark text-center text-lg" required>
-                    <input type="text" id="pAddress" placeholder="العنوان بالتفصيل (محافظة - منطقة)" class="input-dark text-center" required>
-                    <textarea id="pDesc" placeholder="وصف للخدمات المميزة التي تقدمها" class="input-dark h-32 text-center"></textarea>
+            <div class="bg-zinc-900/40 p-8 rounded-[2.5rem] border border-white/5">
+                <h3 id="form-title" class="text-2xl font-bold mb-6 text-center text-rose-600"></h3>
+                <form id="uploadDataForm" class="space-y-4">
+                    <input type="text" id="pName" placeholder="اسم النشاط" class="input-dark text-center" required>
+                    <input type="text" id="pAddress" placeholder="العنوان" class="input-dark text-center" required>
+                    <textarea id="pDesc" placeholder="وصف الخدمة" class="input-dark h-24 text-center"></textarea>
                     
-                    <div class="group relative border-2 border-dashed border-white/10 p-10 rounded-[2rem] text-center hover:border-rose-600 transition-all">
-                        <input type="file" id="pImages" multiple accept="image/*" class="hidden" onchange="showPreview(this)">
+                    <div class="border-2 border-dashed border-white/10 p-6 rounded-2xl text-center">
+                        <input type="file" id="pImages" multiple accept="image/*" class="hidden" onchange="document.getElementById('imgCount').innerText = 'تم اختيار ' + this.files.length + ' صور'">
                         <div onclick="document.getElementById('pImages').click()" class="cursor-pointer">
-                            <svg class="w-12 h-12 text-gray-600 mx-auto mb-4 group-hover:text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                            <p class="text-gray-500 group-hover:text-white">ارفع صور النشاط</p>
+                            <p class="text-gray-500">اضغط لرفع الصور</p>
                             <p id="imgCount" class="text-rose-600 font-bold mt-2"></p>
                         </div>
                     </div>
-                    <button type="submit" id="finalSubmit" class="w-full bg-rose-600 hover:bg-rose-700 text-white py-5 rounded-2xl font-bold text-xl transition-all">حفظ والذهاب للوحة التحكم</button>
+                    <button type="submit" class="w-full bg-rose-600 text-white py-4 rounded-xl font-bold">حفظ وإرسال</button>
                 </form>
             </div>
         </div>
@@ -90,119 +71,77 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-
-        // ImgBB API Key
         const IMGBB_API_KEY = '59e66336e76f59c8697669678e078972';
 
-        // 1. وظيفة التحقق التلقائي عند دخول الصفحة
-        async function checkUserStatus() {
-            const userPhone = sessionStorage.getItem('userPhone');
-            if (!userPhone) { window.location.href = "index.html"; return; }
+        let selectedId = '';
+        const userPhone = sessionStorage.getItem('userPhone');
 
+        // Check user
+        (async () => {
+            if (!userPhone) { window.location.href="index.html"; return; }
             document.getElementById('loader-overlay').style.display = 'flex';
-
-            try {
-                // بنبحث في كولكشن الخدمات هل الرقم ده سجل قبل كدة؟
-                const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
-                const querySnapshot = await getDocs(q);
-
-                if (!querySnapshot.empty) {
-                    // المستخدم ده سجل بياناته قبل كدة، وديه الـ Dashboard فوراً
-                    window.location.href = "adm.html";
-                } else {
-                    // أول مرة، خفيه اللودر ووريه الأقسام
-                    document.getElementById('loader-overlay').style.display = 'none';
-                    document.getElementById('step-categories').classList.remove('hidden');
-                }
-            } catch (err) {
-                console.error(err);
+            const q = query(collection(db, "bride_services"), where("phone", "==", userPhone));
+            const snap = await getDocs(q);
+            if (!snap.empty) { window.location.href = "adm.html"; }
+            else { 
                 document.getElementById('loader-overlay').style.display = 'none';
                 document.getElementById('step-categories').classList.remove('hidden');
             }
-        }
+        })();
 
-        checkUserStatus();
-
-        // الأقسام
-        const sections = [
-            { id: 'halls', name: 'قاعات أفراح', svg: '<path d="M3 21h18M3 10l9-7 9 7v11H3V10z M9 21v-4a3 3 0 016 0v4"/>' },
-            { id: 'makeup', name: 'ميك أب ارتست', svg: '<path d="M12 22a9 9 0 100-18 9 9 0 000 18z M8 11h.01M16 11h.01M12 16c1.5 0 3-1 3-1s-1.5-1-3-1-3 1-3 1 1.5 1 3 1z"/>' },
-            { id: 'hair', name: 'كوافير', svg: '<path d="M12 14c2.8 0 5-2.2 5-5s-2.2-5-5-5-5 2.2-5 5 2.2 5 5 5z M5 21v-2a7 7 0 0114 0v2"/>' },
-            { id: 'dresses', name: 'فساتين زفاف', svg: '<path d="M12 3L4 9v12h16V9l-8-6z M12 3v18M4 9h16"/>' },
-            { id: 'photo', name: 'فوتوغرافير', svg: '<path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>' }
-        ];
-
-        let selectedId = '';
+        // Categories Grid
+        const cats = ['halls', 'makeup', 'hair', 'dresses', 'photo'];
         const grid = document.getElementById('categories-grid');
-        sections.forEach(s => {
-            const card = document.createElement('div');
-            card.className = "category-card p-8 rounded-[2.5rem] text-center";
-            card.innerHTML = `<svg class="w-10 h-10 text-rose-600 mx-auto mb-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">${s.svg}</svg><p class="font-bold text-sm text-white">${s.name}</p>`;
-            card.onclick = () => {
-                selectedId = s.id;
-                document.getElementById('form-title').innerText = s.name;
+        cats.forEach(c => {
+            const div = document.createElement('div');
+            div.className = "category-card p-6 rounded-2xl text-center";
+            div.innerHTML = `<p class="font-bold text-white uppercase">${c}</p>`;
+            div.onclick = () => {
+                selectedId = c;
+                document.getElementById('form-title').innerText = c;
                 document.getElementById('step-categories').classList.add('hidden');
                 document.getElementById('step-form').classList.remove('hidden');
             };
-            grid.appendChild(card);
+            grid.appendChild(div);
         });
-
-        window.goBack = () => {
-            document.getElementById('step-form').classList.add('hidden');
-            document.getElementById('step-categories').classList.remove('hidden');
-        };
-
-        window.showPreview = (input) => {
-            if (input.files.length > 0) {
-                document.getElementById('imgCount').innerText = `جاهز لرفع ${input.files.length} صورة`;
-            }
-        };
-
-        // دالة الرفع المحسنة
-        async function uploadImage(file) {
-            const formData = new FormData();
-            formData.append('image', file);
-            
-            const resp = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await resp.json();
-            if (data.success) return data.data.url;
-            throw new Error("فشل الرفع");
-        }
 
         document.getElementById('uploadDataForm').onsubmit = async (e) => {
             e.preventDefault();
             const files = document.getElementById('pImages').files;
-            if (files.length === 0) return alert("من فضلك ارفع صورك أولاً");
+            if(files.length === 0) return alert("ارفع صور");
 
             document.getElementById('loader-overlay').style.display = 'flex';
-            document.getElementById('loader-text').innerText = "جاري رفع الصور.. انتظر قليلاً";
-
+            
             try {
                 const urls = [];
+                const options = { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true };
+
                 for (let file of files) {
-                    const url = await uploadImage(file);
-                    urls.push(url);
+                    document.getElementById('loader-text').innerText = `جاري ضغط ورفع صورة...`;
+                    
+                    // 1. ضغط الصورة قبل الرفع
+                    const compressedFile = await imageCompression(file, options);
+                    
+                    // 2. رفع الصورة المضغوطة
+                    const formData = new FormData();
+                    formData.append('image', compressedFile);
+                    const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if(data.success) urls.push(data.data.url);
                 }
 
-                document.getElementById('loader-text').innerText = "جاري حفظ البيانات...";
-
                 await addDoc(collection(db, "bride_services"), {
-                    phone: sessionStorage.getItem('userPhone'),
+                    phone: userPhone,
                     category: selectedId,
                     name: document.getElementById('pName').value,
                     address: document.getElementById('pAddress').value,
-                    desc: document.getElementById('pDesc').value,
                     images: urls,
                     time: serverTimestamp()
                 });
 
                 window.location.href = "adm.html";
-
             } catch (err) {
-                alert("حدث خطأ، تأكد من حجم الصور أو اتصال الإنترنت");
+                alert("فشل الرفع، حاول مرة أخرى");
                 document.getElementById('loader-overlay').style.display = 'none';
             }
         };
